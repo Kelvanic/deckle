@@ -462,7 +462,7 @@ struct PaperMillView: View {
     let isNew: Bool
     let dismiss: () -> Void
 
-    @ObservedObject private var state = AppState.shared
+    @ObservedObject var state = AppState.shared
     @State private var isPreviewing = false
     /// Set between a control change and the debounce firing. The thumbnail
     /// renders at 1x while it is true so a weave/blotch drag never stalls on a
@@ -476,10 +476,18 @@ struct PaperMillView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 14) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                StudioBanner(eyebrow: isNew ? "Paper Mill / New paper" : "Paper Mill / Edit paper",
+                             title: "Make it yours.", detail: "Mix a finish. Try it on your screen. Save when it feels right.",
+                             symbol: "scissors", color: StudioStyle.lilac)
                 PaperMillThumbnail(preset: previewPreset, isAdjusting: isAdjusting)
                     .equatable()
+                    .overlay(alignment: .bottomTrailing) {
+                        Text("UNSAVED DRAFT").font(.system(size: 8, weight: .semibold, design: .monospaced))
+                            .tracking(1).padding(7).background(.black.opacity(0.72), in: Capsule())
+                            .foregroundStyle(.white).padding(10)
+                    }
 
                 // 2. On-Screen Live Preview Control Row
                 HStack(spacing: 10) {
@@ -491,7 +499,7 @@ struct PaperMillView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(isPreviewing ? .green : .accentColor)
+                    .tint(isPreviewing ? .green : StudioStyle.rust)
                     .keyboardShortcut("p", modifiers: .command)
 
                     Text(isPreviewing
@@ -503,48 +511,53 @@ struct PaperMillView: View {
                 }
 
                 // 3. Name Field
+                StudioSectionTitle(number: "01", title: "Give it a name")
                 TextField("Name", text: $draft.name)
                     .textFieldStyle(.roundedBorder)
 
                 // 4. Comfort Recipes Row
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Comfort Starting Points")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
+                    Text("START WITH A RECIPE")
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .tracking(1).foregroundStyle(.secondary)
 
                     HStack(spacing: 6) {
                         ForEach(PaperComfort.recipes) { recipe in
-                            Button(recipe.name) {
-                                recipe.apply(to: &draft)
+                            Button { recipe.apply(to: &draft) } label: {
+                                Text(recipe.name).font(.system(size: 11, weight: .medium))
+                                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                                    .background(StudioStyle.lilac.opacity(0.55), in: Capsule())
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(StudioButtonStyle())
                             .controlSize(.small)
                             .help(recipe.detail)
                         }
                     }
                 }
 
-                // 5. Paper Properties & Sliders
-                ColorPicker("Tint", selection: tintBinding, supportsOpacity: false)
+                // Keep the editor controls on one surface; all bindings remain the draft's.
+                VStack(alignment: .leading, spacing: 14) {
+                    StudioSectionTitle(number: "02", title: "Build the texture")
+                    ColorPicker("Tint", selection: tintBinding, supportsOpacity: false)
 
-                labeledSlider("Wash", value: $draft.wash, range: 0.10...0.60)
-                labeledSlider("Weave", value: $draft.weave, range: 0...0.35)
-                labeledSlider("Blotch", value: $draft.blotch, range: 0...0.40)
+                    labeledSlider("Wash", value: $draft.wash, range: 0.10...0.60)
+                    labeledSlider("Weave", value: $draft.weave, range: 0...0.35)
+                    labeledSlider("Blotch", value: $draft.blotch, range: 0...0.40)
 
-                if draft.engineVersion.usesFiberConfig {
-                    labeledSlider("Fiber Strength", value: fiberStrengthBinding, range: 0...1)
-                    angleSlider("Fiber Angle", value: fiberAngleBinding)
-                    labeledSlider("Surface Roughness", value: surfaceRoughnessBinding, range: 0...1)
+                    if draft.engineVersion.usesFiberConfig {
+                        labeledSlider("Fiber Strength", value: fiberStrengthBinding, range: 0...1)
+                        angleSlider("Fiber Angle", value: fiberAngleBinding)
+                        labeledSlider("Surface Roughness", value: surfaceRoughnessBinding, range: 0...1)
+                    }
+
                 }
+                .padding(14)
+                .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 16))
 
                 // 6. Eye Comfort Evaluation Card
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Appearance & Contrast")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
+                        StudioSectionTitle(number: "03", title: "Appearance & contrast")
 
                         Spacer()
 
@@ -589,9 +602,9 @@ struct PaperMillView: View {
                         }
                     }
                 }
-                .padding(10)
-                .background(Color.primary.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(14)
+                .background(StudioStyle.sage.opacity(0.4))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 // 7. Live Intensity Slider
                 VStack(alignment: .leading, spacing: 4) {
@@ -615,44 +628,52 @@ struct PaperMillView: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
-
-                // 8. Bottom Action Buttons
-                HStack {
-                    if !isNew {
-                        Button("Delete", role: .destructive) {
-                            stopPreview()
-                            AppState.shared.customPapers.removeAll { $0.id == draft.id }
-                            dismiss()
-                        }
-                    }
-                    Spacer()
-                    Button("Cancel") {
-                        stopPreview()
-                        dismiss()
-                    }
-                    Button(isNew ? "Create" : "Save") {
-                        stopPreview()
-                        var papers = AppState.shared.customPapers
-                        if let index = papers.firstIndex(where: { $0.id == draft.id }) {
-                            papers[index] = draft
-                        } else {
-                            papers.append(draft)
-                        }
-                        AppState.shared.customPapers = papers
-                        AppState.shared.textureID = draft.id
-                        dismiss()
-                    }
-                    .keyboardShortcut(.defaultAction)
-                }
             }
             .padding(18)
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            editorActions
+                .padding(.horizontal, 18).padding(.vertical, 12)
+                .background(Color(nsColor: .windowBackgroundColor))
+                .overlay(alignment: .top) { Divider() }
+        }
+        .tint(StudioStyle.rust)
         .frame(minWidth: 400, maxWidth: 600, minHeight: 500, maxHeight: 800)
         .onChange(of: previewPreset) { _ in
             schedulePreviewPush()
         }
         .onDisappear {
             pushTask?.cancel()
+        }
+    }
+
+    private var editorActions: some View {
+        HStack {
+            if !isNew {
+                Button("Delete", role: .destructive) {
+                    stopPreview()
+                    AppState.shared.customPapers.removeAll { $0.id == draft.id }
+                    dismiss()
+                }
+            }
+            Spacer()
+            Button("Cancel") {
+                stopPreview()
+                dismiss()
+            }
+            Button(isNew ? "Create" : "Save") {
+                stopPreview()
+                var papers = AppState.shared.customPapers
+                if let index = papers.firstIndex(where: { $0.id == draft.id }) {
+                    papers[index] = draft
+                } else {
+                    papers.append(draft)
+                }
+                AppState.shared.customPapers = papers
+                AppState.shared.textureID = draft.id
+                dismiss()
+            }
+            .keyboardShortcut(.defaultAction)
         }
     }
 
@@ -750,35 +771,31 @@ struct PaperMillView: View {
         value: Binding<Double>,
         range: ClosedRange<Double>
     ) -> some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .frame(width: 48, alignment: .leading)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(label).font(.system(size: 11, weight: .medium))
+                Spacer()
+                Text("\(Int(value.wrappedValue * 100))%")
+                    .font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+            }
             Slider(value: value, in: range)
                 .accessibilityLabel(label)
                 .accessibilityValue("\(Int(value.wrappedValue * 100)) percent")
-            Text("\(Int(value.wrappedValue * 100))%")
-                .font(.caption)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(width: 38, alignment: .trailing)
         }
     }
 
     /// Fiber angle slider showing degrees (0…90°) instead of percent.
     private func angleSlider(_ label: String, value: Binding<Double>) -> some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .frame(width: 48, alignment: .leading)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(label).font(.system(size: 11, weight: .medium))
+                Spacer()
+                Text("\(Int((value.wrappedValue * 180 / .pi).rounded()))°")
+                    .font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+            }
             Slider(value: value, in: 0...(Double.pi / 2))
                 .accessibilityLabel(label)
                 .accessibilityValue("\(Int((value.wrappedValue * 180 / .pi).rounded())) degrees")
-            Text("\(Int((value.wrappedValue * 180 / .pi).rounded()))°")
-                .font(.caption)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(width: 38, alignment: .trailing)
         }
     }
 }

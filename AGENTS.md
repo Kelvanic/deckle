@@ -34,7 +34,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 | App entry and state | `DeckleApp.swift`, `AppState.swift`, `DeskSetup.swift` | MenuBarExtra, application lifecycle, persisted settings and desk setups, tolerant loading, transient preview state |
 | Overlay | `OverlayController.swift`, `OverlayWindow.swift` | One click-through retained-mode window per display |
 | Rendering | `TexturePreset.swift`, `TextureRenderer.swift` | Versioned texture recipes, legacy/spectral/fiber engines, bounded caches |
-| Main menu | `MenuView.swift`, `HeroCardView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `PaperSearch.swift`, `QuickControlsView.swift`, `MenuPopover.swift`, `MenuDismiss.swift`, `StudioStyle.swift` | Status, desk setups, search, paper library, controls, popover sizing and dismissal, shared palette and paper samples |
+| Main menu | `MenuView.swift`, `HeroCardView.swift`, `PaperBallView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `PaperSearch.swift`, `QuickControlsView.swift`, `MenuPopover.swift`, `MenuDismiss.swift`, `StudioStyle.swift` | Status, desk setups, search, paper library, controls, popover sizing and dismissal, Echo companion animation, shared palette, paper samples, and studio controls |
 | Paper creation | `PaperMill.swift`, `PaperComfort.swift` | Custom paper editing, live preview, comfort estimates, import/export |
 | Community and updates | `CommunityBrowser.swift`, `UpdateManager.swift` | Community paper index, download/install, GitHub release updates |
 | Automation | `HotKey.swift`, `URLCommands.swift` | Global shortcut and `deckle://` commands |
@@ -91,7 +91,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - The menu shows one mode at a time: Your desk, Paper library, or Controls and settings. Never stack them.
 - Search operates across built-in and custom papers. Normalize case, accents, and whitespace, and search render-independent metadata only; searching must never render textures.
 - Category filters must include matching custom papers and reset to All when the library is left.
-- A horizontally scrolling row needs an explicit overflow affordance, and every item in it must be reachable by clicking. The control tabs always overflow at 370 points, so they keep a trailing fade and centre the selected tab.
+- A horizontally scrolling row needs an explicit overflow affordance, and every item in it must be reachable by clicking. The five control tabs fit at 370 points without scrolling; do not add a fade or paging arrow unless they overflow.
 - Preserve stable entry points for New, Import, and Community Papers. A dismissible promo card is not sufficient navigation.
 - `MenuDismiss` may dismiss MenuBarExtra/popover content only. It must not order out `NSColorPanel`, `NSStatusBarWindow`, or arbitrary nonactivating panels, and it must never send a generic `performClose:` down the responder chain.
 - AppKit and observable UI singletons are `@MainActor`. Stored callback closures are not automatically actor-isolated under the Xcode 15 release compiler; hop explicitly with `Task { @MainActor in ... }` before calling them.

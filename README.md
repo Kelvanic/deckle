@@ -22,8 +22,8 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 <table>
   <tr>
-    <td width="46%" align="center"><img src="docs/studio-desk.png" alt="Rendered Deckle desk view with a labelled paper sample, comparison control, and saved desk setups" width="360"></td>
-    <td width="54%" align="center"><img src="docs/paper-mill.png" alt="Paper Mill editor with a live-preview button, tint and texture sliders, and appearance and contrast estimates" width="420"></td>
+    <td width="46%" align="center"><img src="docs/studio-desk.png" alt="Rendered Deckle desk with a blue hero card, dotted-ring companion, selected paper swatch, and saved setups" width="360"></td>
+    <td width="54%" align="center"><img src="docs/paper-mill.png" alt="Paper Mill workbench with draft preview, grouped texture controls, and pinned Create and Cancel actions" width="420"></td>
   </tr>
   <tr>
     <td align="center"><strong>Your paper, your desk.</strong><br><sub>A labelled paper sample, temporary comparison, and one-click saved setups.</sub></td>
@@ -35,7 +35,9 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 - **Desk setups** — start with Read, Write, or Unwind, or save up to eight named combinations (names up to 32 characters) of paper, intensity, grain size, grain strength, and matte finish. Applying a setup enables the paper and ends a snooze; display exclusions and app rules still apply. Right-click a setup to remove it. Setups reference your saved papers, so a deleted paper must be restored before its setup can be used. Saving and applying setups is unavailable while a Paper Mill draft is being previewed.
 - **Compare original** — temporarily see your bare screen without changing saved settings or a snooze. It ends when you choose Back to paper, pick another paper, switch tabs, or close the menu.
-- **A paper-first workspace** — *Your desk* shows a large labelled sample, intensity and matte controls, and your setups; *Paper library* provides browsing and search; *Controls and settings* replaces the menu content with grain, snooze, display, app-rule, and app settings.
+- **A living dotted companion** — Echo's six counter-rotating rings breathe around a pulsing core, with blinking eyes that follow the cursor and a spring squash on click. The native animation uses the geometry and motion parameters from the [Cloudstudio reference](https://cloudstudio.es/). It pauses when the menu is hidden or Reduce Motion is enabled; the desktop overlay stays static.
+- **A complete paper studio** — the library has a swatch-gallery layout; all five controls tabs fit at once; Paper Mill groups draft controls with a pinned Save/Cancel bar; Community Papers has readable recipe cards and dedicated empty/offline states. Illustrated headers fan gently on hover and respect Reduce Motion.
+- **A paper-first workspace** — *Your desk* shows the Echo companion, a labelled paper sample, intensity and matte controls, and your setups; *Paper library* provides browsing and search; *Controls and settings* replaces the menu content with grain, snooze, display, app-rule, and app settings.
 - **26 built-in papers**, grouped in the source as:
   - *Quiet reading* — Clear Veil (no grain), Book Cream, Quiet Gray, Evening Shade
   - *Papers* — Soft Wove, Rice Paper, Laid Cotton, Newsprint, Cold Press, Artist Canvas
@@ -65,6 +67,13 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 <p align="center"><img src="docs/studio-library.png" width="370" alt="Rendered Deckle paper library with category filters and material swatches"></p>
 <p align="center"><sub>The desk, library, and Paper Mill images are native SwiftUI renders of the current views with isolated sample settings, not screenshots of a running menu.</sub></p>
+
+<table>
+  <tr>
+    <td width="46%"><img src="docs/studio-controls-snooze.png" alt="Snooze controls with all five navigation tabs and four time cards" width="350"></td>
+    <td width="54%"><img src="docs/studio-community.png" alt="Community Papers gallery rendered with fictional sample recipes and install buttons" width="420"></td>
+  </tr>
+</table>
 
 ## Quiet reading collection
 

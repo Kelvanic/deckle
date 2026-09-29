@@ -9,6 +9,8 @@ struct QuickControlsView: View {
     @ObservedObject private var updater = UpdateManager.shared
     @Binding var isExpanded: Bool
     @Binding var selectedTab: ControlTab
+    /// Review renders pass the packaged version; under XCTest, Bundle.main is the test host.
+    var versionOverride: String? = nil
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -36,139 +38,80 @@ struct QuickControlsView: View {
         Bundle.main.bundleURL.pathExtension == "app"
     }
 
+    private var pageTitle: String {
+        switch selectedTab {
+        case .grain: return "Dial in the detail."
+        case .snooze: return "Take a little break."
+        case .displays: return "Make room for paper."
+        case .appRules: return "Right place. Right feel."
+        case .settings: return "At home on your Mac."
+        }
+    }
+
+    private var pageDetail: String {
+        switch selectedTab {
+        case .grain: return "Tune the size and presence of your paper's grain."
+        case .snooze: return "A bare screen for a while. Your paper returns automatically."
+        case .displays: return "Choose which screens get the paper treatment."
+        case .appRules: return "Let your paper follow the way you work."
+        case .settings: return "Launch, capture privacy, and updates — all in one place."
+        }
+    }
+
+    private var pageColor: Color {
+        switch selectedTab {
+        case .grain, .displays: return StudioStyle.sky
+        case .snooze, .appRules: return StudioStyle.lilac
+        case .settings: return StudioStyle.sage
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header Row with Title and Close Button
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: selectedTab.icon)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                    Text(selectedTab == .settings ? "Settings & Preferences" : "Fine-Tuning & Controls")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.primary)
-                }
+            StudioBanner(eyebrow: "Controls / " + selectedTab.rawValue, title: pageTitle,
+                         detail: pageDetail, symbol: selectedTab.icon, color: pageColor)
 
-                Spacer()
-
-                Button(action: {
-                    withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                        isExpanded = false
-                    }
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .padding(4)
-                        .background(Color.primary.opacity(0.05))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .help("Close controls")
-                .accessibilityLabel("Close controls")
-            }
-            .padding(.horizontal, 2)
-
-            // Horizontally scrollable Tab Pills with Scroll Fade Affordance.
-            // Selecting a tab centres it, so a partly hidden neighbour is
-            // always one click away — a mouse without horizontal scrolling
-            // could otherwise never reach Settings.
-            ZStack(alignment: .trailing) {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(ControlTab.allCases) { tab in
-                                Button(action: {
-                                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) {
-                                        selectedTab = tab
-                                    }
-                                }) {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: tab.icon)
-                                            .font(.system(size: 11))
-                                        Text(tab.rawValue)
-                                            .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .medium))
-                                            .fixedSize(horizontal: true, vertical: false)
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        Capsule()
-                                            .fill(selectedTab == tab ? Color.accentColor : Color.primary.opacity(0.06))
-                                    )
-                                    .foregroundStyle(selectedTab == tab ? Color.white : Color.primary)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(
-                                                selectedTab == tab ? Color.accentColor.opacity(0.4) : Color.primary.opacity(0.04),
-                                                lineWidth: 1
-                                            )
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
-                                .id(tab)
-                            }
+            // Every destination fits without a hidden last tab or decorative overflow fade.
+            HStack(spacing: 4) {
+                ForEach(ControlTab.allCases) { tab in
+                    Button { selectedTab = tab } label: {
+                        VStack(spacing: 5) {
+                            Image(systemName: tab.icon).font(.system(size: 14, weight: .medium))
+                            Text(tab.rawValue).font(.system(size: 9, weight: .medium)).lineLimit(1)
                         }
-                        .padding(.leading, 1)
-                        .padding(.trailing, 16)
-                        .padding(.vertical, 2)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .foregroundStyle(selectedTab == tab ? Color(nsColor: .windowBackgroundColor) : Color.primary)
+                        .background(selectedTab == tab ? Color.primary : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 11))
                     }
-                    .onAppear { proxy.scrollTo(selectedTab, anchor: .center) }
-                    .onChange(of: selectedTab) { tab in
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) {
-                            proxy.scrollTo(tab, anchor: .center)
-                        }
-                    }
+                    .buttonStyle(StudioButtonStyle())
+                    .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
                 }
-
-                // Right edge subtle fade
-                LinearGradient(
-                    colors: [
-                        Color(nsColor: .windowBackgroundColor).opacity(0),
-                        Color(nsColor: .windowBackgroundColor).opacity(0.9)
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: 20)
-                .allowsHitTesting(false)
             }
+            .padding(3)
+            .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 14))
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: selectedTab)
 
-            // Tab Content Card
             VStack(alignment: .leading, spacing: 12) {
                 switch selectedTab {
-                case .grain:
-                    grainControls
-                case .snooze:
-                    snoozeControls
-                case .displays:
-                    displaysControls
-                case .appRules:
-                    appRulesControls
-                case .settings:
-                    settingsControls
+                case .grain: grainControls
+                case .snooze: snoozeControls
+                case .displays: displaysControls
+                case .appRules: appRulesControls
+                case .settings: settingsControls
                 }
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.primary.opacity(0.07), lineWidth: 1)
-            )
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.07)))
+            if !state.isEnabled && (selectedTab == .grain || selectedTab == .appRules || selectedTab == .snooze) {
+                Label("Enable paper on Your desk to adjust these controls.", systemImage: "pause.circle")
+                    .font(.system(size: 10)).foregroundStyle(.secondary)
+            }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.primary.opacity(0.03))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .tint(StudioStyle.rust)
     }
 
     // MARK: - Grain Controls
@@ -186,14 +129,10 @@ struct QuickControlsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Picker("Grain scale", selection: $state.grainScale) {
-                    Text("Fine").tag(0.5)
-                    Text("Normal").tag(1.0)
-                    Text("Coarse").tag(2.0)
-                    Text("Grainy").tag(4.0)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                StudioSegmentedPicker(options: [
+                    ("Fine", 0.5), ("Normal", 1.0), ("Coarse", 2.0), ("Grainy", 4.0)
+                ], selection: $state.grainScale)
+                .accessibilityLabel("Grain scale")
             }
 
             Divider()
@@ -214,7 +153,7 @@ struct QuickControlsView: View {
                 }
 
                 Slider(value: $state.grainStrength, in: 0.25...2.0)
-                    .tint(.accentColor)
+                    .tint(StudioStyle.rust)
                     .accessibilityLabel("Grain visibility")
                     .accessibilityValue("\(Int(state.grainStrength * 100)) percent")
             }
@@ -267,19 +206,23 @@ struct QuickControlsView: View {
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
 
-                    HStack(spacing: 6) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                         ForEach([15, 30, 60, 120], id: \.self) { minutes in
                             Button(action: { state.snooze(minutes: minutes) }) {
-                                Text(minutes >= 120
-                                     ? "\(minutes / 60) hours"
-                                     : (minutes >= 60 ? "\(minutes / 60) hour" : "\(minutes) min"))
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 7)
-                                    .background(Color.primary.opacity(0.06))
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("\(minutes >= 60 ? minutes / 60 : minutes)")
+                                            .font(.system(size: 23, weight: .semibold, design: .rounded))
+                                        Text(minutes >= 60 ? (minutes == 60 ? "hour" : "hours") : "minutes")
+                                            .font(.system(size: 10)).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "moon.zzz").font(.system(size: 18)).foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .background(StudioStyle.lilac.opacity(0.55), in: RoundedRectangle(cornerRadius: 12))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(StudioButtonStyle())
                         }
                     }
                 }
@@ -306,7 +249,8 @@ struct QuickControlsView: View {
                             .toggleStyle(.checkbox)
                             .font(.system(size: 12))
                     }
-                    .padding(.vertical, 2)
+                    .padding(10)
+                    .background(StudioStyle.sky.opacity(0.25), in: RoundedRectangle(cornerRadius: 10))
                 }
             }
         }
@@ -329,13 +273,12 @@ struct QuickControlsView: View {
 
     private var appRulesControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Where the paper shows", selection: $state.appRuleMode) {
-                Text("Everywhere").tag(AppState.AppRuleMode.everywhere)
-                Text("Except…").tag(AppState.AppRuleMode.except)
-                Text("Only…").tag(AppState.AppRuleMode.only)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            StudioSegmentedPicker(options: [
+                ("Everywhere", AppState.AppRuleMode.everywhere),
+                ("Except…", .except),
+                ("Only…", .only)
+            ], selection: $state.appRuleMode)
+            .accessibilityLabel("Where the paper shows")
 
             if state.appRuleMode != .everywhere {
                 if state.ruleApps.isEmpty {
@@ -412,11 +355,11 @@ struct QuickControlsView: View {
             // App version and update status row
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Deckle v\(updater.currentVersion)")
+                    Text("Deckle v\(versionOverride ?? updater.currentVersion)")
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
                         .foregroundStyle(.primary)
 
-                    Text("Spectral Fiber Engine v4 · macOS 13+")
+                    Text("Paper for your Mac · macOS 13+")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
