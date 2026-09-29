@@ -4,7 +4,7 @@ Thanks for considering it! Deckle is a small, focused app — contributions that
 
 ## The easiest contribution: share a paper
 
-No Swift required. Blend a paper in the app (**My Papers → New…**), right-click → **Export…**, and PR the JSON to [deckle-papers](https://github.com/YellowFoxH4XOR/deckle-papers). Same-day review.
+No Swift required. Create a paper in Paper Mill (the **Paper Mill** button at the top of the menu, or **Paper library → … → New Paper…**), right-click it in the library → **Export Paper…**, and open a PR adding the JSON to [deckle-papers](https://github.com/YellowFoxH4XOR/deckle-papers).
 
 ## Building
 
@@ -12,28 +12,30 @@ No Swift required. Blend a paper in the app (**My Papers → New…**), right-cl
 git clone https://github.com/YellowFoxH4XOR/deckle.git
 cd deckle
 swift run        # run unbundled for development
+swift test       # full test suite
 make app         # build dist/Deckle.app (ad-hoc signed)
 ```
 
-No dependencies — pure Swift + AppKit/SwiftUI, built with SPM. macOS 13+, Xcode command line tools.
+No third-party dependencies — Swift and Apple frameworks, built with SwiftPM. Requires macOS 13+ and a Swift 5.9 or newer toolchain (Xcode 15 or later, or its command line tools).
 
 ## Making changes
 
-- `main` is protected: branch → PR. CI isn't required to pass for docs-only changes, but the app must build (`swift build -c release`).
-- Look at [`good first issue`](https://github.com/YellowFoxH4XOR/deckle/labels/good%20first%20issue) for curated starting points, or open a Discussion before larger work so we agree on direction first.
+- `main` is protected: branch → PR. There is no CI on pull requests, so run `swift test` locally and include the result. For release-sensitive changes, also run `make build UNIVERSAL=1`, which compiles both architectures as the release workflow does.
+- Look at [`good first issue`](https://github.com/YellowFoxH4XOR/deckle/labels/good%20first%20issue) for curated starting points, or open a [Discussion](https://github.com/YellowFoxH4XOR/deckle/discussions) before larger work so we agree on direction first.
 - Code style: match what's around you. Comments explain *constraints*, not what the next line does.
-- One feature per PR. Screenshots for UI changes help a lot.
+- One feature or fix per PR. Include screenshots for UI changes.
+- [`AGENTS.md`](AGENTS.md) lists the architectural invariants and testing expectations in full.
 
 ## Architecture in 60 seconds
 
-- `TexturePreset.swift` — texture recipes (data). `TextureRenderer.swift` — tileable value-noise engine that renders them.
-- `OverlayWindow/OverlayController` — one click-through window per display; the texture is a CALayer pattern color (retained-mode — nothing renders per frame).
-- `AppState` — all settings, persisted to UserDefaults. `MenuView` — the menu bar popover UI.
-- `PaperMill/CommunityBrowser` — custom papers and the shared-recipe browser. `URLCommands` — the `deckle://` automation surface.
+- `TexturePreset.swift` — paper recipes (data) and engine versions. `TextureRenderer.swift` — renders them into small seamless tiles: the original value-noise engine, the FFT-based spectral engine, and its fiber layers.
+- `OverlayWindow`/`OverlayController` — one click-through window per display; the texture is a CALayer pattern color (retained-mode — nothing renders per frame).
+- `AppState` — all settings, persisted to UserDefaults. `MenuView` and its child views — the menu bar popover UI.
+- `PaperMill`/`CommunityBrowser` — custom papers and the shared-recipe browser. `URLCommands` — the `deckle://` automation surface. `UpdateManager` — GitHub release updates.
 
 ## Releases
 
-Maintainer tags `vX.Y.Z` → CI builds a universal DMG, signs, notarizes, staples, and publishes. Users auto-update in-app.
+The maintainer tags `vX.Y.Z`; CI then runs the tests, builds a universal DMG, signs it with a Developer ID, notarizes and staples it, and publishes it with a SHA-256 checksum. The app notices the new release and offers **Update** in the menu, or installs it automatically if the user turned that on.
 
 ## License
 

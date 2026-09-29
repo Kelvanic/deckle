@@ -8,15 +8,19 @@ import AppKit
 ///   deckle://on                     enable the texture
 ///   deckle://off                    disable the texture
 ///   deckle://toggle                 flip it
-///   deckle://snooze?minutes=30      snooze (default 30)
+///   deckle://snooze?minutes=30      snooze 1–1440 minutes (default 30)
 ///   deckle://resume                 cancel a snooze
-///   deckle://texture?id=soft-wove   switch texture (id or exact name)
+///   deckle://texture?id=classic-matte   switch paper; `id` or `name`
+///                                   matches either, ignoring case and punctuation
 ///   deckle://intensity?percent=25   set intensity (5–45)
 ///   deckle://grain?size=2&strength=1.2
 enum URLCommands {
     @MainActor
-    static func handle(_ url: URL, state: AppState = .shared) {
+    static func handle(_ url: URL, state: AppState? = nil) {
         guard url.scheme == "deckle" else { return }
+        // Resolved here, not as a default argument: defaults are evaluated
+        // outside the function's main-actor isolation.
+        let state = state ?? .shared
         let params = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?
             .reduce(into: [String: String]()) { $0[$1.name.lowercased()] = $1.value } ?? [:]
@@ -41,8 +45,9 @@ enum URLCommands {
             state.cancelSnooze()
         case "texture":
             // Normalize so "ink-stone", "Ink Stone", and "inkstone" all match.
+            // Digits are kept so "Paper 1" and "Paper 2" stay distinct.
             func normalize(_ s: String) -> String {
-                s.lowercased().filter(\.isLetter)
+                s.lowercased().filter { $0.isLetter || $0.isNumber }
             }
             let query = normalize(params["id"] ?? params["name"] ?? "")
             guard !query.isEmpty else { return }

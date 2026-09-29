@@ -8,9 +8,15 @@ import UniformTypeIdentifiers
 struct CustomPaper: Codable, Equatable, Identifiable {
     var id: String = "custom-\(UUID().uuidString.lowercased())"
     var name: String = "My Paper"
-    var tintRed: Double = 0.96
-    var tintGreen: Double = 0.94
-    var tintBlue: Double = 0.90
+    var tintRed: Double = 0.96 {
+        didSet { releaseTintDerivedAppearance(from: oldValue, to: tintRed) }
+    }
+    var tintGreen: Double = 0.94 {
+        didSet { releaseTintDerivedAppearance(from: oldValue, to: tintGreen) }
+    }
+    var tintBlue: Double = 0.90 {
+        didSet { releaseTintDerivedAppearance(from: oldValue, to: tintBlue) }
+    }
     /// Tint wash opacity at full design strength.
     var wash: Double = 0.38
     /// Woven crosshatch amount; 0 disables the weave.
@@ -22,10 +28,10 @@ struct CustomPaper: Codable, Equatable, Identifiable {
         didSet { enableGrainIfEditingTexture(from: oldValue, to: blotch) }
     }
     /// Procedural engine used to render this paper. Freshly created papers
-    /// use the v3 spectral+ engine; papers saved before this field existed
+    /// use the current engine; papers saved before this field existed
     /// decode as `.legacy` so they keep rendering with the original
     /// generator, unchanged.
-    var engineVersion: TextureEngineVersion = .spectralPlus
+    var engineVersion: TextureEngineVersion = .current
     /// Stable per-paper RNG seed. Generated once when the paper is created
     /// and stored from then on (it round-trips through export/import)
     /// rather than being recomputed on every render.
@@ -49,6 +55,30 @@ struct CustomPaper: Codable, Equatable, Identifiable {
     var darkGrainStrength: Float?
     var lightGrainStrength: Float?
 
+    // MARK: - Duplicated built-in recipe
+    //
+    // Optional so a copy of a built-in renders like its source, and absent
+    // on ordinary custom papers (which derive all of these from the tint).
+
+    /// Speckle colours. Normally derived from the tint.
+    var darkColor: PaperRGB?
+    var lightColor: PaperRGB?
+    /// Grain octaves other than the 16-cell blotch octave `blotch` controls.
+    var baseOctaves: [PaperOctave]?
+    /// Weave period in grid pixels; 8 when absent.
+    var weavePeriod: Int?
+    /// Light/dark classification. Normally derived from tint luminance.
+    var darkPaper: Bool?
+
+    /// Explicit colours and classification belong to the source tint;
+    /// once the tint changes, derive them from the new tint again.
+    private mutating func releaseTintDerivedAppearance(from oldValue: Double, to newValue: Double) {
+        guard oldValue != newValue else { return }
+        darkColor = nil
+        lightColor = nil
+        darkPaper = nil
+    }
+
     /// Grain-free built-ins carry explicit zero strengths when duplicated so
     /// their initial copy remains uniform. Once a texture-producing control
     /// changes, return to normal custom-paper strengths so the edit is visible.
@@ -59,8 +89,9 @@ struct CustomPaper: Codable, Equatable, Identifiable {
     }
 
     var isDark: Bool {
+        if let darkPaper { return darkPaper }
         // Classification must use the same clamped tint as the renderer.
-        0.299 * min(max(tintRed, 0), 1)
+        return 0.299 * min(max(tintRed, 0), 1)
             + 0.587 * min(max(tintGreen, 0), 1)
             + 0.114 * min(max(tintBlue, 0), 1) < 0.5
     }
@@ -74,13 +105,18 @@ struct CustomPaper: Codable, Equatable, Identifiable {
         wash: Double = 0.38,
         weave: Double = 0,
         blotch: Double = 0,
-        engineVersion: TextureEngineVersion = .spectralPlus,
+        engineVersion: TextureEngineVersion = .current,
         seed: UInt64 = .random(in: .min ... .max),
         fiberAngle: Float = 0.3,
         fiberStrength: Float = 0.30,
         surfaceRoughness: Float = 0.15,
         darkGrainStrength: Float? = nil,
-        lightGrainStrength: Float? = nil
+        lightGrainStrength: Float? = nil,
+        darkColor: PaperRGB? = nil,
+        lightColor: PaperRGB? = nil,
+        baseOctaves: [PaperOctave]? = nil,
+        weavePeriod: Int? = nil,
+        darkPaper: Bool? = nil
     ) {
         self.id = id
         self.name = name
@@ -97,12 +133,52 @@ struct CustomPaper: Codable, Equatable, Identifiable {
         self.surfaceRoughness = surfaceRoughness
         self.darkGrainStrength = darkGrainStrength
         self.lightGrainStrength = lightGrainStrength
+        self.darkColor = darkColor
+        self.lightColor = lightColor
+        self.baseOctaves = baseOctaves
+        self.weavePeriod = weavePeriod
+        self.darkPaper = darkPaper
+    }
+
+    /// A Paper Mill draft that renders like `preset`: same colours, octave
+    /// recipe, weave, strengths, engine and fiber settings. `compose(from:)`
+    /// still assigns the fresh id and seed.
+    init(duplicating preset: TexturePreset) {
+        func rgb(_ color: NSColor) -> PaperRGB? {
+            color.usingColorSpace(.sRGB).map {
+                PaperRGB(red: Double($0.redComponent), green: Double($0.greenComponent), blue: Double($0.blueComponent))
+            }
+        }
+        let tint = rgb(preset.tint) ?? PaperRGB(red: 0.96, green: 0.94, blue: 0.90)
+        let blotch = preset.octaves.first { $0.cell == 16 }
+        self.init(
+            name: "\(preset.name) Copy",
+            tintRed: tint.red,
+            tintGreen: tint.green,
+            tintBlue: tint.blue,
+            wash: Double(preset.tintAlpha),
+            weave: Double(preset.weave?.amplitude ?? 0),
+            blotch: Double(blotch?.weight ?? 0),
+            engineVersion: preset.engineVersion,
+            seed: preset.seed,
+            fiberAngle: preset.v3Config?.fiberAngle ?? 0.3,
+            fiberStrength: preset.v3Config?.fiberStrength ?? 0.30,
+            surfaceRoughness: preset.v3Config?.surfaceRoughness ?? 0.15,
+            darkGrainStrength: preset.darkStrength,
+            lightGrainStrength: preset.lightStrength,
+            darkColor: rgb(preset.darkColor),
+            lightColor: rgb(preset.lightColor),
+            baseOctaves: preset.octaves.filter { $0.cell != 16 }.map { PaperOctave(cell: $0.cell, weight: Double($0.weight)) },
+            weavePeriod: preset.weave?.period,
+            darkPaper: preset.isDark
+        )
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, name, tintRed, tintGreen, tintBlue, wash, weave, blotch, engineVersion, seed
         case fiberAngle, fiberStrength, surfaceRoughness
         case darkGrainStrength, lightGrainStrength
+        case darkColor, lightColor, baseOctaves, weavePeriod, darkPaper
     }
 
     init(from decoder: Decoder) throws {
@@ -128,6 +204,11 @@ struct CustomPaper: Codable, Equatable, Identifiable {
         surfaceRoughness = try container.decodeIfPresent(Float.self, forKey: .surfaceRoughness) ?? 0
         darkGrainStrength = try container.decodeIfPresent(Float.self, forKey: .darkGrainStrength)
         lightGrainStrength = try container.decodeIfPresent(Float.self, forKey: .lightGrainStrength)
+        darkColor = try container.decodeIfPresent(PaperRGB.self, forKey: .darkColor)
+        lightColor = try container.decodeIfPresent(PaperRGB.self, forKey: .lightColor)
+        baseOctaves = try container.decodeIfPresent([PaperOctave].self, forKey: .baseOctaves)
+        weavePeriod = try container.decodeIfPresent(Int.self, forKey: .weavePeriod)
+        darkPaper = try container.decodeIfPresent(Bool.self, forKey: .darkPaper)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -147,6 +228,11 @@ struct CustomPaper: Codable, Equatable, Identifiable {
         try container.encode(surfaceRoughness, forKey: .surfaceRoughness)
         try container.encodeIfPresent(darkGrainStrength, forKey: .darkGrainStrength)
         try container.encodeIfPresent(lightGrainStrength, forKey: .lightGrainStrength)
+        try container.encodeIfPresent(darkColor, forKey: .darkColor)
+        try container.encodeIfPresent(lightColor, forKey: .lightColor)
+        try container.encodeIfPresent(baseOctaves, forKey: .baseOctaves)
+        try container.encodeIfPresent(weavePeriod, forKey: .weavePeriod)
+        try container.encodeIfPresent(darkPaper, forKey: .darkPaper)
     }
 
     /// djb2 hash — deterministic across launches, so a legacy paper decoded
@@ -158,6 +244,17 @@ struct CustomPaper: Codable, Equatable, Identifiable {
         }
         return hash
     }
+}
+
+struct PaperRGB: Codable, Equatable {
+    var red: Double
+    var green: Double
+    var blue: Double
+}
+
+struct PaperOctave: Codable, Equatable {
+    var cell: Int
+    var weight: Double
 }
 
 extension TexturePreset {
@@ -176,7 +273,20 @@ extension TexturePreset {
         let blotch = clamp(paper.blotch, 0...0.40)
         let dark = paper.isDark
 
-        var octaves: [(cell: Int, weight: Float)] = [(1, 0.45), (2, 0.30), (4, 0.25)]
+        func color(_ rgb: PaperRGB) -> NSColor {
+            NSColor(srgbRed: clamp(rgb.red, 0...1), green: clamp(rgb.green, 0...1), blue: clamp(rgb.blue, 0...1), alpha: 1)
+        }
+        // Imported octaves are untrusted: bounded count, power-of-two cells
+        // (anything else seams the legacy engine), and positive weights.
+        let importedOctaves = (paper.baseOctaves ?? []).prefix(6).compactMap { octave -> (cell: Int, weight: Float)? in
+            let weight = clamp(octave.weight, 0...1)
+            guard weight > 0 else { return nil }
+            let exponent = Int(log2(Double(min(max(octave.cell, 1), 64))).rounded())
+            return (1 << exponent, Float(weight))
+        }
+        var octaves: [(cell: Int, weight: Float)] = importedOctaves.isEmpty
+            ? [(1, 0.45), (2, 0.30), (4, 0.25)]
+            : importedOctaves
         if blotch > 0.01 {
             octaves.append((16, Float(blotch)))
         }
@@ -189,16 +299,18 @@ extension TexturePreset {
             tintAlpha: wash,
             // Speckles: darkened tint for shadows, lightened for highlights —
             // keeps custom papers tonally coherent at any hue.
-            darkColor: NSColor(srgbRed: r * 0.30, green: g * 0.28, blue: b * 0.25, alpha: 1),
-            lightColor: NSColor(srgbRed: r + (1 - r) * 0.85, green: g + (1 - g) * 0.85, blue: b + (1 - b) * 0.85, alpha: 1),
+            darkColor: paper.darkColor.map(color)
+                ?? NSColor(srgbRed: r * 0.30, green: g * 0.28, blue: b * 0.25, alpha: 1),
+            lightColor: paper.lightColor.map(color)
+                ?? NSColor(srgbRed: r + (1 - r) * 0.85, green: g + (1 - g) * 0.85, blue: b + (1 - b) * 0.85, alpha: 1),
             darkStrength: paper.darkGrainStrength.map { Float(clamp(Double($0), 0...1)) } ?? (dark ? 0.30 : 0.50),
             lightStrength: paper.lightGrainStrength.map { Float(clamp(Double($0), 0...1)) } ?? (dark ? 0.45 : 0.35),
             octaves: octaves,
-            weave: weave > 0.01 ? (period: 8, amplitude: Float(weave)) : nil,
+            weave: weave > 0.01 ? (period: min(max(paper.weavePeriod ?? 8, 2), 64), amplitude: Float(weave)) : nil,
             isDark: dark,
             engineVersion: paper.engineVersion,
             seed: paper.seed,
-            v3Config: paper.engineVersion == .spectralPlus
+            v3Config: paper.engineVersion.usesFiberConfig
                 ? TextureEngineConfig(
                     fiberAngle: Float(clamp(Double(paper.fiberAngle), 0...(Double.pi / 2))),
                     fiberStrength: Float(clamp(Double(paper.fiberStrength), 0...1)),
@@ -344,6 +456,7 @@ private struct PaperMillThumbnail: View, Equatable {
     }
 }
 
+/// Internal (not private) so StudioRenderTests can render it for the docs.
 struct PaperMillView: View {
     @State var draft: CustomPaper
     let isNew: Bool
@@ -431,7 +544,7 @@ struct PaperMillView: View {
                     labeledSlider("Weave", value: $draft.weave, range: 0...0.35)
                     labeledSlider("Blotch", value: $draft.blotch, range: 0...0.40)
 
-                    if draft.engineVersion == .spectralPlus {
+                    if draft.engineVersion.usesFiberConfig {
                         labeledSlider("Fiber Strength", value: fiberStrengthBinding, range: 0...1)
                         angleSlider("Fiber Angle", value: fiberAngleBinding)
                         labeledSlider("Surface Roughness", value: surfaceRoughnessBinding, range: 0...1)
@@ -509,6 +622,8 @@ struct PaperMillView: View {
                         in: 0.05...0.45,
                         onEditingChanged: { isAdjusting = $0 }
                     )
+                    .accessibilityLabel("Intensity")
+                    .accessibilityValue("\(Int(state.intensity * 100)) percent")
                     Text("Shared with the menu — the level this paper will actually be seen at.")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
@@ -664,6 +779,8 @@ struct PaperMillView: View {
                     .font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
             }
             Slider(value: value, in: range)
+                .accessibilityLabel(label)
+                .accessibilityValue("\(Int(value.wrappedValue * 100)) percent")
         }
     }
 
@@ -677,12 +794,15 @@ struct PaperMillView: View {
                     .font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
             }
             Slider(value: value, in: 0...(Double.pi / 2))
+                .accessibilityLabel(label)
+                .accessibilityValue("\(Int((value.wrappedValue * 180 / .pi).rounded())) degrees")
         }
     }
 }
 
 // MARK: - Export / import
 
+@MainActor
 enum PaperFiles {
     static func export(_ paper: CustomPaper) {
         let panel = NSSavePanel()
@@ -691,7 +811,11 @@ enum PaperFiles {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try? (try? encoder.encode(paper)).map { try $0.write(to: url) }
+        do {
+            try encoder.encode(paper).write(to: url, options: .atomic)
+        } catch {
+            showError("Couldn't export \u{201C}\(paper.name)\u{201D}", detail: error.localizedDescription)
+        }
     }
 
     static func importPapers() {
@@ -700,12 +824,30 @@ enum PaperFiles {
         panel.allowsMultipleSelection = true
         panel.message = "Choose .decklepaper.json files"
         guard panel.runModal() == .OK else { return }
+        var rejected: [String] = []
         for url in panel.urls {
             guard let data = try? Data(contentsOf: url),
-                  var paper = try? JSONDecoder().decode(CustomPaper.self, from: data) else { continue }
+                  var paper = try? JSONDecoder().decode(CustomPaper.self, from: data) else {
+                rejected.append(url.lastPathComponent)
+                continue
+            }
             // Fresh id so an import can never silently overwrite a local paper.
             paper.id = "custom-\(UUID().uuidString.lowercased())"
             AppState.shared.customPapers.append(paper)
         }
+        if !rejected.isEmpty {
+            showError(
+                rejected.count == 1 ? "1 file wasn't a Deckle paper" : "\(rejected.count) files weren't Deckle papers",
+                detail: rejected.joined(separator: "\n")
+            )
+        }
+    }
+
+    private static func showError(_ message: String, detail: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = message
+        alert.informativeText = detail
+        alert.runModal()
     }
 }

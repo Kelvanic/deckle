@@ -12,6 +12,8 @@ final class StudioRenderTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
         defaults.removePersistentDomain(forName: suite)
         let state = AppState(defaults: defaults)
+        // Show the footer as a running app does, with ⌥⌘P registered.
+        HotKey.register()
         for (name, scheme) in [("studio-desk", ColorScheme.light), ("studio-desk-dark", ColorScheme.dark)] {
             let view = MenuView().environmentObject(state).environment(\.colorScheme, scheme)
             let host = NSHostingView(rootView: view)

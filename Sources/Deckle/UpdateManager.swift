@@ -244,9 +244,10 @@ final class UpdateManager: ObservableObject {
             NSWorkspace.shared.open(releasesPage)
         case .install:
             guard let dmg = update?.downloadURL else { return }
+            let bundleID = Bundle.main.bundleIdentifier
             Task {
                 do {
-                    try await selfReplace(target: target, dmg: dmg)
+                    try await Self.selfReplace(target: target, dmg: dmg, bundleID: bundleID)
                     relaunch(target)
                 } catch {
                     status = .failed(error.localizedDescription)
@@ -284,29 +285,39 @@ final class UpdateManager: ObservableObject {
 
     // MARK: - Install mechanics
 
-    private func selfReplace(target: URL, dmg: URL) async throws {
+    /// Designated requirement every downloaded update must satisfy: a
+    /// Developer ID Application certificate issued to Deckle's team. A valid
+    /// ad-hoc or foreign signature proves only integrity, not origin.
+    nonisolated static let signingRequirement =
+        "anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6]"
+        + " and certificate leaf[field.1.2.840.113635.100.6.1.13]"
+        + " and certificate leaf[subject.OU] = \"B6H9852GJN\""
+
+    /// Nonisolated so the blocking hdiutil/codesign/ditto calls run on the
+    /// generic executor; on the main actor they would freeze the menu bar and
+    /// the overlay for the whole install.
+    private nonisolated static func selfReplace(target: URL, dmg: URL, bundleID: String?) async throws {
         let (download, _) = try await URLSession.shared.download(from: dmg)
+        // The async download API leaves the file for the caller to remove.
+        defer { try? FileManager.default.removeItem(at: download) }
         let mount = FileManager.default.temporaryDirectory
             .appendingPathComponent("deckle-update-\(UUID().uuidString)")
 
         try run("/usr/bin/hdiutil", "attach", download.path,
                 "-nobrowse", "-quiet", "-mountpoint", mount.path)
-        defer { try? run("/usr/bin/hdiutil", "detach", mount.path, "-quiet") }
+        defer { _ = try? run("/usr/bin/hdiutil", "detach", mount.path, "-quiet") }
 
         let newApp = mount.appendingPathComponent("Deckle.app")
         guard FileManager.default.fileExists(atPath: newApp.path) else {
             throw UpdateError.badArchive
         }
 
-        // Integrity gate before the swap: the code signature seal must
-        // verify and the payload must actually be Deckle. Releases are
-        // ad-hoc signed, so this proves the bundle is intact, not who built
-        // it — origin trust comes from the pinned HTTPS release URL above.
-        // (If Deckle adopts Developer ID signing, tighten this with
-        // `-R="anchor apple generic and certificate leaf[subject.OU] = <team>"`.)
-        try run("/usr/bin/codesign", "--verify", "--deep", "--strict", newApp.path)
+        // Gate before the swap: the seal must verify, the signer must be
+        // Deckle's Developer ID team, and the payload must actually be Deckle.
+        try run("/usr/bin/codesign", "--verify", "--deep", "--strict",
+                "-R=\(signingRequirement)", newApp.path)
         let newInfo = NSDictionary(contentsOf: newApp.appendingPathComponent("Contents/Info.plist"))
-        guard newInfo?["CFBundleIdentifier"] as? String == Bundle.main.bundleIdentifier else {
+        guard newInfo?["CFBundleIdentifier"] as? String == bundleID else {
             throw UpdateError.badArchive
         }
 
@@ -322,7 +333,7 @@ final class UpdateManager: ObservableObject {
 
         // The DMG-mounted copy carries no quarantine, but clear it defensively
         // so the swapped-in bundle never triggers a Gatekeeper prompt.
-        try? run("/usr/bin/xattr", "-dr", "com.apple.quarantine", staging.path)
+        _ = try? run("/usr/bin/xattr", "-dr", "com.apple.quarantine", staging.path)
 
         // replaceItemAt is atomic on a single volume: no window where the app
         // is half-removed, and it fails cleanly (leaving the original intact)
@@ -341,7 +352,7 @@ final class UpdateManager: ObservableObject {
     }
 
     @discardableResult
-    private func run(_ launchPath: String, _ arguments: String...) throws -> String {
+    private nonisolated static func run(_ launchPath: String, _ arguments: String...) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: launchPath)
         process.arguments = arguments

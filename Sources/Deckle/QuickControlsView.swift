@@ -12,6 +12,7 @@ struct QuickControlsView: View {
     /// Review renders pass the packaged version; under XCTest, Bundle.main is the test host.
     var versionOverride: String? = nil
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     enum ControlTab: String, CaseIterable, Identifiable {
         case grain = "Grain"
@@ -36,8 +37,6 @@ struct QuickControlsView: View {
     private var isBundled: Bool {
         Bundle.main.bundleURL.pathExtension == "app"
     }
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var pageTitle: String {
         switch selectedTab {
@@ -133,7 +132,7 @@ struct QuickControlsView: View {
                 StudioSegmentedPicker(options: [
                     ("Fine", 0.5), ("Normal", 1.0), ("Coarse", 2.0), ("Grainy", 4.0)
                 ], selection: $state.grainScale)
-                .accessibilityLabel("Grain Scale")
+                .accessibilityLabel("Grain scale")
             }
 
             Divider()
@@ -155,6 +154,8 @@ struct QuickControlsView: View {
 
                 Slider(value: $state.grainStrength, in: 0.25...2.0)
                     .tint(StudioStyle.rust)
+                    .accessibilityLabel("Grain visibility")
+                    .accessibilityValue("\(Int(state.grainStrength * 100)) percent")
             }
         }
         .disabled(!state.isEnabled)
@@ -277,7 +278,7 @@ struct QuickControlsView: View {
                 ("Except…", .except),
                 ("Only…", .only)
             ], selection: $state.appRuleMode)
-            .accessibilityLabel("App Rules")
+            .accessibilityLabel("Where the paper shows")
 
             if state.appRuleMode != .everywhere {
                 if state.ruleApps.isEmpty {
@@ -300,6 +301,7 @@ struct QuickControlsView: View {
                                             .font(.system(size: 12))
                                     }
                                     .buttonStyle(.plain)
+                                    .accessibilityLabel("Remove \(app.name)")
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -370,9 +372,13 @@ struct QuickControlsView: View {
 
             Divider()
 
-            Toggle("Hide in screenshots & screen recordings", isOn: $state.hideFromCapture)
+            // macOS offers no guaranteed capture opt-out: system screenshots
+            // honour sharingType .none, but ScreenCaptureKit apps may not
+            // (Apple DTS, developer forums thread 792152).
+            Toggle("Hide from macOS screenshots", isOn: $state.hideFromCapture)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
+                .help("Screenshots and recordings made with macOS leave the texture out. Some screen-sharing and recording apps can still capture it.")
 
             Toggle("Launch automatically at login", isOn: launchAtLoginBinding)
                 .toggleStyle(.checkbox)

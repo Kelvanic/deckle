@@ -27,4 +27,31 @@ final class InputValidationTests: XCTestCase {
         XCTAssertEqual(actual.darkStrength, normalized.darkStrength)
         XCTAssertEqual(actual.lightStrength, normalized.lightStrength)
     }
+
+    @MainActor
+    func testTextureCommandDistinguishesPapersByDigits() throws {
+        let suite = "DeckleTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let state = AppState(defaults: defaults)
+        let first = CustomPaper(name: "Paper 1", seed: 1)
+        let second = CustomPaper(name: "Paper 2", seed: 2)
+        state.customPapers = [first, second]
+
+        URLCommands.handle(try XCTUnwrap(URL(string: "deckle://texture?name=Paper%202")), state: state)
+        XCTAssertEqual(state.textureID, second.id)
+        URLCommands.handle(try XCTUnwrap(URL(string: "deckle://texture?id=ink-stone")), state: state)
+        XCTAssertEqual(state.textureID, "carbon-ledger")
+    }
+
+    func testCommunityPaperFileNamesAreAllowlisted() {
+        XCTAssertEqual(
+            CommunityBrowser.paperURL(for: "warm-linen_2.json")?.absoluteString,
+            "https://raw.githubusercontent.com/YellowFoxH4XOR/deckle-papers/main/papers/warm-linen_2.json"
+        )
+        for file in ["../index.json", "a/b.json", "%2e%2e/x.json", "x.json?raw=1",
+                     ".hidden.json", "paper.txt", "....json/", ""] {
+            XCTAssertNil(CommunityBrowser.paperURL(for: file), file)
+        }
+    }
 }

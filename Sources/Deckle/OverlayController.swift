@@ -3,6 +3,7 @@ import Combine
 
 /// Owns one OverlayWindow per display and keeps them in sync with AppState
 /// and with display configuration changes (plug/unplug, resolution change).
+@MainActor
 final class OverlayController {
     static let shared = OverlayController()
 
@@ -38,7 +39,10 @@ final class OverlayController {
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
             queue: .main
-        ) { [weak self] _ in self?.refresh() }
+        ) { [weak self] _ in
+            // Observer blocks are not actor-isolated; hop explicitly.
+            Task { @MainActor in self?.refresh() }
+        }
 
         // Event-driven per-app rules: no polling, we only hear about
         // activations. The listener is always on (cheap) so switching the
@@ -50,8 +54,11 @@ final class OverlayController {
             queue: .main
         ) { [weak self] note in
             let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            self?.frontmostBundleID = app?.bundleIdentifier
-            self?.refresh()
+            let bundleID = app?.bundleIdentifier
+            Task { @MainActor in
+                self?.frontmostBundleID = bundleID
+                self?.refresh()
+            }
         }
 
         refresh()
@@ -89,10 +96,15 @@ final class OverlayController {
                 return created
             }()
 
-            window.setFrame(screen.frame, display: true)
-            window.apply(texture: state.effectiveTexture, adjustments: state.grainAdjustments)
+            if window.frame != screen.frame {
+                window.setFrame(screen.frame, display: true)
+            }
 
             if visible {
+                // Only visible overlays render: browsing papers or dragging
+                // grain controls while paused costs no tile synthesis. The
+                // texture is applied before a hidden window is shown.
+                window.apply(texture: state.effectiveTexture, adjustments: state.grainAdjustments)
                 if window.isVisible {
                     // Already showing (e.g. slider drag): track directly,
                     // animating every tick would lag behind the slider.

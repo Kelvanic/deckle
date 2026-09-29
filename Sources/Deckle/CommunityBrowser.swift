@@ -22,9 +22,10 @@ final class CommunityBrowser: ObservableObject {
     @Published var entries: [Entry] = []
     @Published var status: Status = .idle
     @Published var installing: Set<String> = []
+    @Published var installError: String?
 
     private var window: NSWindow?
-    private static let base = "https://raw.githubusercontent.com/YellowFoxH4XOR/deckle-papers/main"
+    private nonisolated static let base = "https://raw.githubusercontent.com/YellowFoxH4XOR/deckle-papers/main"
 
     func open() {
         MenuDismiss.dismiss()
@@ -56,14 +57,31 @@ final class CommunityBrowser: ObservableObject {
         }
     }
 
+    /// Index entries name a single file inside `papers/`. Anything else —
+    /// separators, dot segments, percent-escapes, query strings — is refused
+    /// rather than rewritten.
+    nonisolated static func paperURL(for file: String) -> URL? {
+        let allowed = CharacterSet(charactersIn:
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
+        guard file.hasSuffix(".json"), !file.hasPrefix("."), file.count <= 128,
+              file.unicodeScalars.allSatisfy(allowed.contains) else { return nil }
+        return URL(string: "\(base)/papers/\(file)")
+    }
+
     func install(_ entry: Entry) async {
-        // Only fetch files listed by the index, never arbitrary paths.
-        let file = entry.file.replacingOccurrences(of: "..", with: "")
-        guard let url = URL(string: "\(Self.base)/papers/\(file)") else { return }
+        guard !installing.contains(entry.id) else { return }
+        installError = nil
+        guard let url = Self.paperURL(for: entry.file) else {
+            installError = "\(entry.name) has an invalid file name and was not installed."
+            return
+        }
         installing.insert(entry.id)
         defer { installing.remove(entry.id) }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
-              var paper = try? JSONDecoder().decode(CustomPaper.self, from: data) else { return }
+              var paper = try? JSONDecoder().decode(CustomPaper.self, from: data) else {
+            installError = "Couldn't install \(entry.name). Check your connection and try again."
+            return
+        }
         paper.id = "custom-\(UUID().uuidString.lowercased())"
         AppState.shared.customPapers.append(paper)
         AppState.shared.textureID = paper.id
@@ -124,6 +142,12 @@ struct CommunityView: View {
                     .frame(minHeight: 180, maxHeight: 340)
                 }
             }
+            if let installError = browser.installError {
+                Text(installError)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Made something lovely?").font(.system(size: 12, weight: .semibold))
@@ -175,6 +199,7 @@ private struct CommunityPaperRow: View {
             }
             .buttonStyle(StudioButtonStyle())
             .disabled(installing)
+            .accessibilityLabel(installing ? "Installing \(entry.name)" : "Install \(entry.name)")
         }
         .padding(12)
         .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 14))

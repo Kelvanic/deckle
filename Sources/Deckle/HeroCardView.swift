@@ -64,6 +64,7 @@ struct HeroCardView: View {
             HStack(spacing: 6) {
                 Circle().fill(state.shouldShowOverlay && !state.isComparingOriginal ? StudioStyle.rust : .secondary)
                     .frame(width: 5, height: 5)
+                    .accessibilityHidden(true)
                 Text(status).font(.system(size: 11)).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
@@ -76,6 +77,7 @@ struct HeroCardView: View {
             }
             Slider(value: $state.intensity, in: 0.05...0.45)
                 .accessibilityLabel("Paper intensity")
+                .accessibilityValue("\(Int(state.intensity * 100)) percent")
 
             HStack {
                 Text("Matte finish").font(.system(size: 12, weight: .medium))

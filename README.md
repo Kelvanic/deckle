@@ -33,36 +33,40 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 ## Features
 
-- **Desk setups** — start with Read, Write, or Unwind, or save up to eight named combinations of paper, intensity, grain size, grain strength, and matte finish. Applying a setup enables the paper and ends a snooze; display exclusions and app rules still apply. Right-click a setup to remove it. Setups reference your saved papers, so a deleted paper must be restored before its setup can be used.
-- **Compare original** — temporarily see your bare screen without changing saved settings or a snooze. Choose Back to paper or close the menu to end comparison.
+- **Desk setups** — start with Read, Write, or Unwind, or save up to eight named combinations (names up to 32 characters) of paper, intensity, grain size, grain strength, and matte finish. Applying a setup enables the paper and ends a snooze; display exclusions and app rules still apply. Right-click a setup to remove it. Setups reference your saved papers, so a deleted paper must be restored before its setup can be used. Saving and applying setups is unavailable while a Paper Mill draft is being previewed.
+- **Compare original** — temporarily see your bare screen without changing saved settings or a snooze. It ends when you choose Back to paper, pick another paper, switch tabs, or close the menu.
 - **A living dotted companion** — Echo's six counter-rotating rings breathe around a pulsing core, with blinking eyes that follow the cursor and a spring squash on click. The native animation uses the geometry and motion parameters from the [Cloudstudio reference](https://cloudstudio.es/). It pauses when the menu is hidden or Reduce Motion is enabled; the desktop overlay stays static.
 - **A complete paper studio** — the library has a swatch-gallery layout; all five controls tabs fit at once; Paper Mill groups draft controls with a pinned Save/Cancel bar; Community Papers has readable recipe cards and dedicated empty/offline states. Illustrated headers fan gently on hover and respect Reduce Motion.
-- **A paper-first workspace** — Your desk presents an interactive paper companion, a labelled sample, and your setups; Paper library provides browsing and search; Controls and settings keeps detailed adjustments in a separate view. Desk setups are unavailable while an unsaved Paper Mill draft is being previewed.
-
-- **26 built-in paper textures**, including a quiet reading collection:
+- **A paper-first workspace** — *Your desk* shows the Echo companion, a labelled paper sample, intensity and matte controls, and your setups; *Paper library* provides browsing and search; *Controls and settings* replaces the menu content with grain, snooze, display, app-rule, and app settings.
+- **26 built-in papers**, grouped in the source as:
   - *Quiet reading* — Clear Veil (no grain), Book Cream, Quiet Gray, Evening Shade
-  - *Papers* — Soft Wove, Rice Paper, Laid Cotton, Newsprint, Cold Press, Artist Canvas, Felt Side, Frost Glassine
-  - *Warm & tinted* — Foxed Amber, Bookcloth, Recycled Kraft, Plum Kozo, Rose Quartz, Sage Press, Nordic Sky
+  - *Papers* — Soft Wove, Rice Paper, Laid Cotton, Newsprint, Cold Press, Artist Canvas
+  - *Warm* — Foxed Amber, Bookcloth, Recycled Kraft
+  - *Tinted* — Plum Kozo, Rose Quartz, Sage Press, Nordic Sky, Frost Glassine, Felt Side
   - *Dark* — Ink Stone, Midnight Slate, Espresso
-  - *Spectral+ (v3)* — Gesso Ground, Linen Veil, Parchment Grain, Slate Veil — oriented fibers and surface roughness with deeper tints that cut glare
-- **Searchable paper library** — search names, descriptions, IDs, and material terms, including repeated whitespace, accents, and terms in any order; filter by light, dark, or custom papers. Switching views resizes the menu to fit its content
-- **Paper Mill with live screen preview** — tune tint, wash, weave, and blotch against your actual desktop before creating or saving the paper
-- **Comfort guidance** — see tint-wash contrast retention, estimated luminance and blue-channel reduction, tint temperature, pattern load, and four starting recipes: Focus, Reading, Paper, and Night. Estimates exclude the separate Matte finish control.
-- **Paper portability** — export custom papers as JSON, import them later, or install shared recipes from the [community papers repo](https://github.com/YellowFoxH4XOR/deckle-papers)
-- **Intensity and grain controls** — intensity from 5–45%, grain size from Fine to Grainy, and independent grain strength
-- **Global hotkey** — ⌥⌘P toggles the texture from any app
-- **In-app updates** — Deckle checks GitHub Releases daily and installs automatically from writable app locations; otherwise it explains the blocker and offers the release page
-- **Per-app rules** — hide the paper in chosen apps ("Except…") or show it only in chosen apps ("Only…")
-- **Automation** — `deckle://` URL commands work from Shortcuts, Raycast, Alfred, cron, or Terminal
-- **Capture privacy** — optionally hide the texture from screenshots and screen recordings while it stays visible to you
-- **Snooze** for 15 min, 30 min, 1 hour, or 2 hours, then resume automatically
-- **Multi-monitor support** with per-display inclusion
-- **Launch at login**
-- **Click-through and lightweight** — the texture is one small tiled image; Deckle uses approximately 0% CPU at rest
-- **Menu-bar first** — no Dock icon or app-switcher entry; Paper Mill and Community Papers open only when requested
+  - *Fiber-forward* — Gesso Ground, Linen Veil, Parchment Grain, Slate Veil — the strongest fiber strands and surface roughness, with deeper tints
 
-<p align="center"><img src="docs/studio-library.png" width="370" alt="Rendered Deckle paper library with material swatches, categories, and import actions"></p>
-<p align="center"><sub>The studio images above are native SwiftUI review renders with isolated sample settings.</sub></p>
+  Every built-in renders with the same fiber engine and has its own grain seed. In the library they are filtered as Light or Dark.
+- **Searchable paper library** — search names, descriptions, IDs, and material terms such as `woven`, `dark`, `custom`, or `quiet reading`. Search ignores case, accents, and repeated whitespace, and matches terms in any order. Filter by All, Light, Dark, or My Papers. Switching views resizes the menu to fit its content.
+- **Paper Mill with live screen preview** — tune tint, wash (10–60%), weave (0–35%), blotch (0–40%), fiber strength, fiber angle (0–90°), and surface roughness against your actual desktop before creating or saving the paper. The shared intensity slider sets the level the paper is judged at.
+- **Appearance guidance** — Paper Mill estimates luminance change, black/white contrast and its retention grade, blue-channel reduction, tint temperature, pattern load, fiber load, and veil alpha, and offers four starting recipes: Focus, Reading, Paper, and Night. Estimates model the tint wash only: they exclude grain and the Matte finish control.
+- **Paper portability** — export a custom paper as `<name>.decklepaper.json`, import one or more files later, or install shared recipes from the [community papers repo](https://github.com/YellowFoxH4XOR/deckle-papers). Imports and installs get a fresh ID, so they never overwrite a local paper; files that can't be read are reported. **Duplicate in Paper Mill…** on a built-in copies its full recipe, so the copy looks identical until you edit it.
+- **Intensity and grain controls** — intensity from 5–45% (default 22%), grain size Fine, Normal, Coarse, or Grainy (0.5×, 1×, 2×, 4×), grain visibility from 25–200%, and a matte finish from 0–100%.
+- **Global hotkey** — ⌥⌘P toggles the paper from any app. If macOS refuses the registration, the menu footer says the shortcut is unavailable.
+- **In-app updates** — Deckle checks GitHub Releases about 5 seconds after launch and then roughly daily. When a newer version exists, the menu offers **Update**; with **Install updates automatically** turned on (off by default) it installs without asking. In-place installation requires Deckle to run from a writable folder such as `/Applications` or `~/Applications`, and the download must carry Deckle's Developer ID signature. Otherwise Deckle explains the blocker and offers the release page.
+- **Per-app rules** — show the paper everywhere, hide it while chosen apps are frontmost ("Except…"), or show it only while they are frontmost ("Only…"). Deckle's own windows always count as allowed.
+- **Automation** — `deckle://` URL commands work from Shortcuts, Raycast, Alfred, cron, or Terminal
+- **Capture privacy** — optionally hide the texture from macOS screenshots and recordings while it stays visible to you. macOS provides no guaranteed opt-out, so some screen-sharing and recording apps may still capture it
+- **Snooze** for 15 min, 30 min, 1 hour, or 2 hours, then resume automatically. Quitting Deckle ends a snooze.
+- **Multi-monitor support** — one overlay per display; include or exclude each display under Controls → Displays
+- **Launch at login** — available in the bundled app
+- **Click-through and lightweight** — each display tiles one small texture image, so memory does not grow with resolution, and nothing is redrawn per frame. A paused overlay does no rendering at all.
+- **Menu-bar first** — no Dock icon or app-switcher entry; Paper Mill and Community Papers open only when requested
+- **Accessible** — VoiceOver labels, values, and selected states across the menu, controls, and Paper Mill, including the menu bar icon ("Deckle, paper on/off"); interface animations respect Reduce Motion
+- **Settings you can't lose** — if a stored paper, setup, or app rule can't be read (for example after moving between Deckle versions), the rest still load and the original data is kept; papers are restored once a later launch can read them
+
+<p align="center"><img src="docs/studio-library.png" width="370" alt="Rendered Deckle paper library with category filters and material swatches"></p>
+<p align="center"><sub>The desk, library, and Paper Mill images are native SwiftUI renders of the current views with isolated sample settings, not screenshots of a running menu.</sub></p>
 
 <table>
   <tr>
@@ -73,13 +77,15 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 ## Quiet reading collection
 
-Start with **Clear Veil** for neutral dimming without grain, **Book Cream** for a faint warm finish, **Quiet Gray** for fine texture, or **Evening Shade** for deeper dimming. They appear first in Paper library; search `quiet reading` to show all four. Try 18–22% intensity and adjust to your display and room. Existing papers and saved selections are preserved.
+Start with **Clear Veil** for neutral dimming without grain, **Book Cream** for a faint warm finish, **Quiet Gray** for fine texture, or **Evening Shade** for deeper dimming. They appear first in Paper library, and new installations start on Clear Veil at 22% intensity; search `quiet reading` to show all four. Try 18–22% intensity and adjust to your display and room.
 
-The new presets prioritize low pattern variation and readable text. These are design choices, not clinically proven eye-strain treatments. Read the [research and rendered-tile measurements](docs/reading-presets-research.md).
+These presets prioritize low pattern variation and readable text. They are design choices, not clinically proven eye-strain treatments. Read the [research and rendered-tile measurements](docs/reading-presets-research.md).
 
 ![The same reading sample under bare screen, Soft Wove, and four quiet reading overlays at 22 percent](docs/reading-proof-light.png)
 
 ## Install
+
+Deckle requires macOS 13 or later and runs natively on Apple silicon and Intel Macs.
 
 ### Homebrew
 
@@ -89,61 +95,68 @@ brew trust yellowfoxh4xor/tap   # Homebrew 6+ asks once for third-party taps
 brew install --cask deckle
 ```
 
+The cask can lag behind the latest release; Deckle's in-app updater then offers the newest version.
+
 ### Download
 
-Grab the DMG from the [latest release](https://github.com/YellowFoxH4XOR/deckle/releases/latest), open it, and drag Deckle into Applications. The app is signed with a Developer ID and notarized by Apple, so it launches without any Gatekeeper warning.
+Grab the DMG from the [latest release](https://github.com/YellowFoxH4XOR/deckle/releases/latest), open it, and drag Deckle into Applications. Release builds are signed with a Developer ID and notarized by Apple, so they launch without a Gatekeeper warning. Each release also publishes a SHA-256 checksum file.
 
 ### Build from source
 
-Requires Xcode command line tools, macOS 13+:
+Requires a Swift 5.9 or newer toolchain (Xcode 15 or later, or its command line tools) on macOS 13+:
 
 ```sh
-git clone https://github.com/<you>/deckle.git
+git clone https://github.com/YellowFoxH4XOR/deckle.git
 cd deckle
-make install    # builds, copies Deckle.app to /Applications, and launches
+make install    # quits a running Deckle, builds, replaces /Applications/Deckle.app, and launches it
 ```
 
-Or `make run` to try it from `dist/` without installing. Look for the paper-sheet icon in your menu bar.
+Or `make run` to build and launch it from `dist/` without installing. Local builds are ad-hoc signed. Look for the italic serif **d** in your menu bar: bold while the paper is showing, faded while it is off, snoozed, or being compared.
 
 ## How it works
 
-- Deckle owns one borderless, transparent `NSWindow` per display at `.screenSaver` level. Each window ignores mouse events, joins every Space, and tiles one small paper image through Core Animation, so memory does not grow with display resolution.
-- Built-in and newly created papers use the deterministic **spectral+ (v3) renderer**: a random-phase, Hermitian-symmetric frequency field is synthesized with Accelerate/vDSP, inverse transformed into seamless grain, then layered with woven fibers, oriented Gabor-modulated fiber bundles that darken (absorbing light like real paper fibers), and Perlin surface roughness for a deeper, matte feel. The separate Matte finish pass adjusts the final tint wash; older custom papers retain their stored spectral or legacy engine for byte-compatible grain output.
-- The resulting 256×256-point tile contains both the tint wash and grain. The intensity control changes only the overlay window's `alphaValue`; identical render inputs reuse bounded caches.
-- Desk setups persist alongside settings in UserDefaults. Bare-screen comparison is transient and ends when the menu closes.
-- Paper Mill previews an unsaved draft through the same overlay windows used by saved papers. Preview state is transient, respects excluded displays, and is torn down when the editor closes or the draft is cancelled.
-- **Energy design:** after setup, the retained-mode overlay renders nothing per frame. Update checks use `NSBackgroundActivityScheduler`; ordinary overlay changes are coalesced, and Paper Mill draft pushes are debounced to avoid regenerating spectral fields for every slider event.
+- Deckle owns one borderless, transparent `NSWindow` per display at `.screenSaver` level. Each window ignores mouse events, joins every Space including full-screen ones, stays out of the window cycle, and tiles one small paper image through Core Animation, so memory does not grow with display resolution.
+- Built-in and newly created papers use the deterministic **spectral fiber (v4) renderer**: a random-phase, Hermitian-symmetric frequency field is synthesized with Accelerate/vDSP and inverse-transformed into seamless grain, then layered with an optional woven crosshatch and fiber splats, sparse flecks, tapered fiber strands whose fine fibrils follow the fiber angle, and multi-octave value-noise surface roughness. Fibers and roughness only darken the field, as light-absorbing paper fibers would. Saved custom papers keep the engine they were created with (v3, v2, or the original value-noise generator), and their grain output stays byte-identical.
+- One tile contains both the tint wash and the grain: 256×256 points (256 or 512 pixels, following the display's backing scale), or 128×128 points for original-engine papers. The separate Matte finish pass only adjusts the tint wash. The intensity control changes only each overlay window's `alphaValue`, and identical render inputs reuse bounded caches.
+- Settings, custom papers, desk setups, and app rules persist in UserDefaults (`app.deckle.Deckle`). Bare-screen comparison and snooze are not persisted.
+- Paper Mill previews an unsaved draft through the same overlay windows used by saved papers. The preview overrides pause, snooze, and app rules so the draft can be judged, still respects excluded displays, and ends when you stop the preview, save, cancel, delete, or close the editor.
+- **Energy design:** after setup, the retained-mode overlay renders nothing per frame, and hidden overlays skip rendering until they are shown. State changes are coalesced to at most about 30 overlay refreshes per second, Paper Mill waits 180 ms after the last edit before updating the live preview, and the daily update check runs through `NSBackgroundActivityScheduler` so macOS can batch it.
 
 ## Automation
 
 Anything that can open a URL can drive Deckle — Shortcuts' "Open URL" action, `open` in Terminal, Raycast, Alfred, cron:
 
-```
-deckle://on | off | toggle
-deckle://snooze?minutes=30      deckle://resume
-deckle://texture?name=Ink%20Stone
-deckle://intensity?percent=25
-deckle://grain?size=2&strength=1.2
-```
+| Command | Effect |
+| --- | --- |
+| `deckle://on` | Enable the paper and end any snooze |
+| `deckle://off` | Pause the paper |
+| `deckle://toggle` | Pause if the paper is showing; otherwise end any snooze and enable it |
+| `deckle://snooze?minutes=30` | Snooze for 1–1440 minutes (default 30) |
+| `deckle://resume` | End a snooze |
+| `deckle://texture?id=carbon-ledger` or `?name=Ink%20Stone` | Select a built-in or custom paper. Either parameter matches IDs and names, ignoring case, spaces, and punctuation, so `Ink Stone`, `ink-stone`, and `inkstone` are equivalent; digits are kept. Unknown papers are ignored |
+| `deckle://intensity?percent=25` | Set intensity; clamped to 5–45 (`value=` also works) |
+| `deckle://grain?size=2&strength=1.2` | Snap grain size to the nearest of 0.5, 1, 2, or 4, and set grain visibility, clamped to 0.25–2 |
 
-Non-finite numeric inputs such as `nan` or `inf` are ignored. Values outside the supported finite range are clamped; existing invalid numeric preferences recover to safe defaults on launch.
+Non-finite numeric inputs such as `nan` or `inf` are ignored. Invalid numeric preferences recover to safe defaults on launch. Unknown commands do nothing.
 
-Examples: a Shortcuts personal automation "At sunset → Open URL `deckle://on`" gives you circadian scheduling; "When Work Focus turns on → `deckle://texture?name=Soft%20Wove`" pairs papers with contexts.
+On macOS 26 or later, a Shortcuts automation such as "Time of Day: Sunset → Open URL `deckle://on`" schedules the paper, and "When a display is connected → Open URL `deckle://texture?name=Soft%20Wove`" pairs a paper with a desk. On earlier macOS versions, use cron or `launchd` with `open "deckle://on"`.
 
 ## Development
 
 ```sh
-swift run            # run unbundled (dev)
-make app             # build dist/Deckle.app
+swift run                   # run unbundled (dev)
+swift test                  # full test suite
+make app                    # build dist/Deckle.app (ad-hoc signed)
+make build UNIVERSAL=1      # arm64 + x86_64 release compile, as the release workflow does
 make clean
 ```
 
-No dependencies; pure Swift + AppKit + SwiftUI.
+No third-party dependencies; only Apple frameworks such as SwiftUI, AppKit, Combine, Accelerate, ServiceManagement, and Carbon (for the global hotkey).
 
-Regenerate the isolated native studio review renders with:
+Regenerate the native review renders in `docs/` (desk, library, Paper Mill, and reading proofs) with:
 
 ```sh
-DECKLE_RENDER_DIR="$PWD/docs" swift test --filter StudioRenderTests
+DECKLE_RENDER_DIR="$PWD/docs" swift test --filter "StudioRenderTests|ReadingProofTests"
 ```
 
 These renders check appearance; they do not replace testing menu-bar dismissal,
@@ -151,12 +164,14 @@ screen geometry, and live overlay behavior in the bundled app.
 
 ## Roadmap
 
-- Battery auto-disable & Low Power Mode awareness
-- Built-in sunset scheduling (today: use a Shortcuts automation with `deckle://on`)
+- [Battery auto-disable & Low Power Mode awareness](https://github.com/YellowFoxH4XOR/deckle/issues/17)
+- [Built-in sunrise/sunset scheduling](https://github.com/YellowFoxH4XOR/deckle/issues/19) (today: use a Shortcuts automation or cron with `deckle://on`)
+- [Custom snooze durations](https://github.com/YellowFoxH4XOR/deckle/issues/18)
+- [Localization](https://github.com/YellowFoxH4XOR/deckle/issues/14)
 
 ## Contributing
 
-The easiest PR: [share a paper recipe](https://github.com/YellowFoxH4XOR/deckle-papers) — 10 lines of JSON, no Swift needed. For code, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [good first issues](https://github.com/YellowFoxH4XOR/deckle/labels/good%20first%20issue). Questions and ideas → [Discussions](https://github.com/YellowFoxH4XOR/deckle/discussions).
+The easiest PR: [share a paper recipe](https://github.com/YellowFoxH4XOR/deckle-papers) — a small JSON file, no Swift needed. For code, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [good first issues](https://github.com/YellowFoxH4XOR/deckle/labels/good%20first%20issue). Questions and ideas → [Discussions](https://github.com/YellowFoxH4XOR/deckle/discussions).
 
 ## License
 

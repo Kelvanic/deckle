@@ -18,7 +18,7 @@ struct PaperComfort: Equatable {
     let temperature: Double
     /// Combined structural prominence of weave and blotch patterns, 0…1.
     let patternLoad: Double
-    /// v3 fiber-bundle density, 0…1. Zero for legacy/spectral papers.
+    /// Fiber density for v3/v4 papers, 0…1. Zero for legacy/spectral papers.
     let fiberLoad: Double
 
     enum Grade: String, Equatable {
@@ -101,7 +101,7 @@ struct PaperComfort: Equatable {
         }
 
         let patternLoad = min(1.0, 0.7 * (weave / 0.35) + 0.3 * (blotch / 0.40))
-        let fiberLoad = paper.engineVersion == .spectralPlus
+        let fiberLoad = paper.engineVersion.usesFiberConfig
             ? min(1.0, max(0, Double(paper.fiberStrength)))
             : 0
 

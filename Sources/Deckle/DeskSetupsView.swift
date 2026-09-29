@@ -44,6 +44,7 @@ struct DeskSetupsView: View {
                                 HStack {
                                     Image(systemName: selected ? "checkmark.circle.fill" : setupSymbol(setup.name))
                                         .font(.system(size: 15, weight: .medium))
+                                        .accessibilityHidden(true)
                                     Spacer(minLength: 0)
                                     Text("\(Int(setup.intensity * 100))%")
                                         .font(.system(size: 9, design: .monospaced))
@@ -61,6 +62,7 @@ struct DeskSetupsView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(StudioButtonStyle())
+                        .accessibilityAddTraits(selected ? .isSelected : [])
                         .disabled(!available || state.previewPaper != nil)
                         .help(available ? "Apply \(setup.name): paper, intensity, grain and matte" : "The paper used by this setup was deleted")
                         .contextMenu {
