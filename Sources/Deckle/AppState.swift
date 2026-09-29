@@ -3,6 +3,7 @@ import Combine
 
 /// Central observable state. The menu UI writes to it; the overlay controller
 /// observes it and updates the on-screen windows.
+@MainActor
 final class AppState: ObservableObject {
     static let shared = AppState()
 
@@ -29,8 +30,8 @@ final class AppState: ObservableObject {
         didSet { defaults.set(Array(excludedDisplays), forKey: Keys.excluded) }
     }
 
-    /// When on, overlay windows opt out of screen capture — screenshots and
-    /// recordings show clean content while the texture stays visible to you.
+    /// When on, overlay windows opt out of screen capture. macOS screenshots
+    /// honour this; apps capturing through ScreenCaptureKit may not.
     @Published var hideFromCapture: Bool {
         didSet { defaults.set(hideFromCapture, forKey: Keys.hideFromCapture) }
     }
@@ -225,12 +226,9 @@ final class AppState: ObservableObject {
         grainStrength = defaults.object(forKey: Keys.grainStrength) as? Double ?? 1.0
         matteStrength = defaults.object(forKey: Keys.matteStrength) as? Double ?? 0.0
         appRuleMode = AppRuleMode(rawValue: defaults.string(forKey: Keys.appRuleMode) ?? "") ?? .everywhere
-        ruleApps = defaults.data(forKey: Keys.ruleApps)
-            .flatMap { try? JSONDecoder().decode([RuleApp].self, from: $0) } ?? []
-        customPapers = defaults.data(forKey: Keys.customPapers)
-            .flatMap { try? JSONDecoder().decode([CustomPaper].self, from: $0) } ?? []
-        deskSetups = defaults.data(forKey: Keys.deskSetups)
-            .flatMap { try? JSONDecoder().decode([DeskSetup].self, from: $0) }
+        ruleApps = Self.loadList(RuleApp.self, key: Keys.ruleApps, defaults: defaults) ?? []
+        customPapers = Self.loadCustomPapers(defaults: defaults)
+        deskSetups = Self.loadList(DeskSetup.self, key: Keys.deskSetups, defaults: defaults)
             .map { Array($0.filter(\.hasValidSettings).prefix(8)) } ?? DeskSetup.starters
 
         // Recover older preferences written by non-finite automation input.
@@ -241,6 +239,64 @@ final class AppState: ObservableObject {
         matteStrength = matteStrength.isFinite ? min(max(matteStrength, 0), 1) : 0
     }
 
+    // MARK: - Tolerant loading
+
+    /// Decodes one list element without failing the whole list.
+    private struct Lossy<Element: Decodable>: Decodable {
+        let value: Element?
+        init(from decoder: Decoder) throws {
+            value = try? Element(from: decoder)
+        }
+    }
+
+    /// Key holding the raw bytes of a list that could not be fully read.
+    static func unreadableKey(for key: String) -> String { "\(key).unreadable" }
+
+    /// Loads a stored list element by element, so one entry this version
+    /// can't read (a paper from a newer Deckle, or a damaged record) doesn't
+    /// discard the rest. The original bytes are kept under a side key before
+    /// the next save can overwrite them. Returns nil when nothing is stored.
+    private static func loadList<Element: Decodable>(
+        _ type: Element.Type, key: String, defaults: UserDefaults
+    ) -> [Element]? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        // Keep the first preserved copy: it is the one closest to the data
+        // the user actually had.
+        func preserve() {
+            if defaults.data(forKey: unreadableKey(for: key)) == nil {
+                defaults.set(data, forKey: unreadableKey(for: key))
+            }
+        }
+        guard let entries = try? JSONDecoder().decode([Lossy<Element>].self, from: data) else {
+            preserve()
+            return []
+        }
+        let readable = entries.compactMap(\.value)
+        if readable.count != entries.count { preserve() }
+        return readable
+    }
+
+    /// Custom papers also recover entries preserved by an earlier launch
+    /// that this version can now read (for example after downgrading and
+    /// upgrading again). The backup is dropped once nothing in it is lost.
+    private static func loadCustomPapers(defaults: UserDefaults) -> [CustomPaper] {
+        var papers = loadList(CustomPaper.self, key: Keys.customPapers, defaults: defaults) ?? []
+        let backupKey = unreadableKey(for: Keys.customPapers)
+        guard let backup = defaults.data(forKey: backupKey),
+              let preserved = try? JSONDecoder().decode([Lossy<CustomPaper>].self, from: backup)
+        else { return papers }
+        let known = Set(papers.map(\.id))
+        let recovered = preserved.compactMap(\.value).filter { !known.contains($0.id) }
+        papers.append(contentsOf: recovered)
+        if preserved.allSatisfy({ $0.value != nil }) {
+            if !recovered.isEmpty, let data = try? JSONEncoder().encode(papers) {
+                defaults.set(data, forKey: Keys.customPapers)
+            }
+            defaults.removeObject(forKey: backupKey)
+        }
+        return papers
+    }
+
     private func scheduleSnoozeExpiry() {
         snoozeTimer?.invalidate()
         snoozeTimer = nil
@@ -249,7 +305,8 @@ final class AppState: ObservableObject {
             withTimeInterval: until.timeIntervalSinceNow,
             repeats: false
         ) { [weak self] _ in
-            self?.snoozeUntil = nil
+            // Timer blocks are not actor-isolated; hop explicitly.
+            Task { @MainActor in self?.snoozeUntil = nil }
         }
         // A snooze ending seconds late is invisible; a coalesced CPU wakeup
         // is real battery savings.

@@ -65,35 +65,40 @@ final class OverlayGlareTests: XCTestCase {
         XCTAssertGreaterThan(high, low, "higher intensity must produce more dimming")
     }
 
-    // MARK: - v3 engine glare reduction
+    // MARK: - Fiber engine glare reduction
 
-    func testV3VariantDimsMoreThanV2ForSameRecipe() {
-        // The v3 engine's darkening fibers must produce more white-screen
-        // dimming than the identical v2 recipe at the same intensity — this
-        // is the engine's real glare-reduction contribution, independent of
-        // the wash × intensity product that caps absolute dimming.
+    func testFiberEnginesDimMoreThanV2ForSameRecipe() {
+        // Darkening fibers must produce more white-screen dimming than the
+        // identical v2 recipe at the same intensity — this is the engine's
+        // real glare-reduction contribution, independent of the wash ×
+        // intensity product that caps absolute dimming.
         var regressions: [String] = []
-        // Every current built-in is v3; compare it with a synthetic v2
-        // version while using the preset's actual stored v3 configuration.
-        for preset in TexturePreset.all where preset.engineVersion == .spectralPlus {
+        // Compare every built-in, and its v3 rendering, with a synthetic v2
+        // version using the preset's actual stored fiber configuration.
+        let fiberPresets = TexturePreset.all.filter { $0.engineVersion.usesFiberConfig }
+        XCTAssertEqual(fiberPresets.count, TexturePreset.all.count)
+        for preset in fiberPresets {
             guard let config = preset.v3Config else {
                 regressions.append("\(preset.name) has no v3 configuration")
                 continue
             }
             let v2 = dimmingOverWhite(preset: TexturePreset(v2: preset), windowAlpha: defaultIntensity).dimming
-            let configuredV3 = TexturePreset(v2: preset, v3Config: config)
-            let v3 = dimmingOverWhite(preset: configuredV3, windowAlpha: defaultIntensity).dimming
-            if v3 < v2 {
-                regressions.append(String(format: "%@ v2 %.2f%% → v3 %.2f%%", preset.name, v2 * 100, v3 * 100))
+            for engine: TextureEngineVersion in [.spectralPlus, .spectralFiber] {
+                let configured = TexturePreset(v2: preset, v3Config: config, engineVersion: engine)
+                let fibered = dimmingOverWhite(preset: configured, windowAlpha: defaultIntensity).dimming
+                if fibered < v2 {
+                    regressions.append(String(format: "%@ v2 %.2f%% → v%d %.2f%%",
+                                              preset.name, v2 * 100, engine.rawValue, fibered * 100))
+                }
             }
         }
         XCTAssertTrue(
             regressions.isEmpty,
-            "v3 must never dim less than v2 for the same recipe: \(regressions.joined(separator: "; "))"
+            "fiber engines must never dim less than v2 for the same recipe: \(regressions.joined(separator: "; "))"
         )
     }
 
-    func testV3BuiltInLightPapersDimMoreThanV2LightAverage() {
+    func testFiberForwardLightPapersDimMoreThanV2LightAverage() {
         let v2Light = TexturePreset.light.map(TexturePreset.init(v2:))
         let v2Average = v2Light
             .map { dimmingOverWhite(preset: $0, windowAlpha: defaultIntensity).dimming }
@@ -108,11 +113,11 @@ final class OverlayGlareTests: XCTestCase {
         }
         XCTAssertTrue(
             weak.isEmpty,
-            "v3 glare-reducing built-ins should dim more than the v2 light-paper average: \(weak.joined(separator: "; "))"
+            "fiber-forward built-ins should dim more than the v2 light-paper average: \(weak.joined(separator: "; "))"
         )
     }
 
-    func testV3BuiltInDarkPaperDimSubstantially() {
+    func testFiberForwardDarkPaperDimsSubstantially() {
         let dimming = dimmingOverWhite(preset: TexturePreset.preset(id: "slate-veil"), windowAlpha: defaultIntensity).dimming
         XCTAssertGreaterThan(
             dimming, 0.10,

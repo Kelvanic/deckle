@@ -10,6 +10,7 @@ struct QuickControlsView: View {
     @Binding var isExpanded: Bool
     @Binding var selectedTab: ControlTab
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     enum ControlTab: String, CaseIterable, Identifiable {
         case grain = "Grain"
@@ -51,7 +52,7 @@ struct QuickControlsView: View {
                 Spacer()
 
                 Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                         isExpanded = false
                     }
                 }) {
@@ -64,47 +65,61 @@ struct QuickControlsView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Close controls")
+                .accessibilityLabel("Close controls")
             }
             .padding(.horizontal, 2)
 
-            // Horizontally scrollable Tab Pills with Scroll Fade Affordance
+            // Horizontally scrollable Tab Pills with Scroll Fade Affordance.
+            // Selecting a tab centres it, so a partly hidden neighbour is
+            // always one click away — a mouse without horizontal scrolling
+            // could otherwise never reach Settings.
             ZStack(alignment: .trailing) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(ControlTab.allCases) { tab in
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    selectedTab = tab
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(ControlTab.allCases) { tab in
+                                Button(action: {
+                                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) {
+                                        selectedTab = tab
+                                    }
+                                }) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: tab.icon)
+                                            .font(.system(size: 11))
+                                        Text(tab.rawValue)
+                                            .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .medium))
+                                            .fixedSize(horizontal: true, vertical: false)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        Capsule()
+                                            .fill(selectedTab == tab ? Color.accentColor : Color.primary.opacity(0.06))
+                                    )
+                                    .foregroundStyle(selectedTab == tab ? Color.white : Color.primary)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(
+                                                selectedTab == tab ? Color.accentColor.opacity(0.4) : Color.primary.opacity(0.04),
+                                                lineWidth: 1
+                                            )
+                                    )
                                 }
-                            }) {
-                                HStack(spacing: 5) {
-                                    Image(systemName: tab.icon)
-                                        .font(.system(size: 11))
-                                    Text(tab.rawValue)
-                                        .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .medium))
-                                        .fixedSize(horizontal: true, vertical: false)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(
-                                    Capsule()
-                                        .fill(selectedTab == tab ? Color.accentColor : Color.primary.opacity(0.06))
-                                )
-                                .foregroundStyle(selectedTab == tab ? Color.white : Color.primary)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(
-                                            selectedTab == tab ? Color.accentColor.opacity(0.4) : Color.primary.opacity(0.04),
-                                            lineWidth: 1
-                                        )
-                                )
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+                                .id(tab)
                             }
-                            .buttonStyle(.plain)
+                        }
+                        .padding(.leading, 1)
+                        .padding(.trailing, 16)
+                        .padding(.vertical, 2)
+                    }
+                    .onAppear { proxy.scrollTo(selectedTab, anchor: .center) }
+                    .onChange(of: selectedTab) { tab in
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) {
+                            proxy.scrollTo(tab, anchor: .center)
                         }
                     }
-                    .padding(.leading, 1)
-                    .padding(.trailing, 16)
-                    .padding(.vertical, 2)
                 }
 
                 // Right edge subtle fade
@@ -171,7 +186,7 @@ struct QuickControlsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Picker("", selection: $state.grainScale) {
+                Picker("Grain scale", selection: $state.grainScale) {
                     Text("Fine").tag(0.5)
                     Text("Normal").tag(1.0)
                     Text("Coarse").tag(2.0)
@@ -200,6 +215,8 @@ struct QuickControlsView: View {
 
                 Slider(value: $state.grainStrength, in: 0.25...2.0)
                     .tint(.accentColor)
+                    .accessibilityLabel("Grain visibility")
+                    .accessibilityValue("\(Int(state.grainStrength * 100)) percent")
             }
         }
         .disabled(!state.isEnabled)
@@ -312,7 +329,7 @@ struct QuickControlsView: View {
 
     private var appRulesControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("", selection: $state.appRuleMode) {
+            Picker("Where the paper shows", selection: $state.appRuleMode) {
                 Text("Everywhere").tag(AppState.AppRuleMode.everywhere)
                 Text("Except…").tag(AppState.AppRuleMode.except)
                 Text("Only…").tag(AppState.AppRuleMode.only)
@@ -341,6 +358,7 @@ struct QuickControlsView: View {
                                             .font(.system(size: 12))
                                     }
                                     .buttonStyle(.plain)
+                                    .accessibilityLabel("Remove \(app.name)")
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -398,7 +416,7 @@ struct QuickControlsView: View {
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
                         .foregroundStyle(.primary)
 
-                    Text("Spectral+ Engine v3 · macOS 13+")
+                    Text("Spectral Fiber Engine v4 · macOS 13+")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
@@ -411,9 +429,13 @@ struct QuickControlsView: View {
 
             Divider()
 
-            Toggle("Hide in screenshots & screen recordings", isOn: $state.hideFromCapture)
+            // macOS offers no guaranteed capture opt-out: system screenshots
+            // honour sharingType .none, but ScreenCaptureKit apps may not
+            // (Apple DTS, developer forums thread 792152).
+            Toggle("Hide from macOS screenshots", isOn: $state.hideFromCapture)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
+                .help("Screenshots and recordings made with macOS leave the texture out. Some screen-sharing and recording apps can still capture it.")
 
             Toggle("Launch automatically at login", isOn: launchAtLoginBinding)
                 .toggleStyle(.checkbox)

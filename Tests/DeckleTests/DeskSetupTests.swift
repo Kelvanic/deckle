@@ -2,6 +2,7 @@ import XCTest
 @testable import Deckle
 
 final class DeskSetupTests: XCTestCase {
+    @MainActor
     private func withState(_ body: (AppState, UserDefaults) throws -> Void) throws {
         let suite = "DeckleTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -9,6 +10,7 @@ final class DeskSetupTests: XCTestCase {
         try body(AppState(defaults: defaults), defaults)
     }
 
+    @MainActor
     func testSavedSetupSurvivesRelaunchAndRestoresAllControls() throws {
         try withState { state, defaults in
             state.textureID = "rice-paper"
@@ -33,6 +35,7 @@ final class DeskSetupTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testOlderSetupWithoutMatteMigratesToZero() throws {
         let json = """
         {
@@ -48,6 +51,7 @@ final class DeskSetupTests: XCTestCase {
         XCTAssertTrue(setup.hasValidSettings)
     }
 
+    @MainActor
     func testMissingPaperAndLiveDraftPreventSetupApplication() throws {
         try withState { state, _ in
             let original = state.textureID
@@ -63,6 +67,7 @@ final class DeskSetupTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testComparePreservesSnoozeAndPreviewButNeverOverridesExclusions() throws {
         try withState { state, _ in
             state.snooze(minutes: 30)
@@ -81,6 +86,7 @@ final class DeskSetupTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testComparisonIsTransientAndRulesRemainAuthoritative() throws {
         try withState { state, defaults in
             state.appRuleMode = .only
@@ -92,6 +98,7 @@ final class DeskSetupTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testSaveValidationAndRemovingAllSetupsPersistsEmptyLibrary() throws {
         try withState { state, defaults in
             XCTAssertFalse(state.saveDeskSetup(name: " \n "))
@@ -102,6 +109,7 @@ final class DeskSetupTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testInvalidStoredNumbersRecoverToUsableDefaults() throws {
         try withState { _, defaults in
             defaults.set(Double.nan, forKey: "intensity")

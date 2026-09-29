@@ -27,6 +27,9 @@ enum Icons {
             return true
         }
         image.isTemplate = true
+        // The status item's VoiceOver name comes from its image; MenuBarExtra
+        // ignores accessibility modifiers on the label view.
+        image.accessibilityDescription = active ? "Deckle, paper on" : "Deckle, paper off"
         return image
     }
 }

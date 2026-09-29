@@ -11,7 +11,7 @@ enum PresetCategory: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// A modern, tactile preset card for the carousel and grid.
+/// A modern, tactile preset card for the paper library grid.
 struct ModernPresetCard: View {
     let preset: TexturePreset
     let isSelected: Bool
@@ -39,6 +39,7 @@ struct ModernPresetCard: View {
                             .foregroundStyle(Color.white)
                             .shadow(color: .black.opacity(0.4), radius: 2)
                             .padding(4)
+                            .accessibilityHidden(true)
                     }
                 }
 
@@ -71,6 +72,7 @@ struct ModernPresetCard: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .contextMenu {
             if let customPaper {
                 Button("Edit in Paper Mill…") {
@@ -89,22 +91,7 @@ struct ModernPresetCard: View {
                 }
             } else {
                 Button("Duplicate in Paper Mill…") {
-                    let duplicate = CustomPaper(
-                        name: "\(preset.name) Copy",
-                        tintRed: Double(preset.tint.redComponent),
-                        tintGreen: Double(preset.tint.greenComponent),
-                        tintBlue: Double(preset.tint.blueComponent),
-                        wash: Double(preset.tintAlpha),
-                        weave: Double(preset.weave?.amplitude ?? 0),
-                        blotch: Double(preset.octaves.first(where: { $0.cell == 16 })?.weight ?? 0),
-                        engineVersion: preset.engineVersion,
-                        seed: preset.seed,
-                        fiberAngle: preset.v3Config?.fiberAngle ?? 0.3,
-                        fiberStrength: preset.v3Config?.fiberStrength ?? 0.30,
-                        surfaceRoughness: preset.v3Config?.surfaceRoughness ?? 0.15,
-                        darkGrainStrength: preset.darkStrength,
-                        lightGrainStrength: preset.lightStrength
-                    )
+                    let duplicate = CustomPaper(duplicating: preset)
                     if let onOpenMill {
                         onOpenMill(duplicate, true)
                     } else {
@@ -131,15 +118,15 @@ struct ModernPresetCard: View {
     }
 }
 
-/// Collection section containing the preset carousel or full multi-column grid,
-/// with search filtering, category tabs, and clear scroll affordances (floating arrows and edge fades).
+/// The paper library: a searchable multi-column grid with category filters.
+/// MenuView shows it only while browsing all papers or searching.
 struct PresetCollectionView: View {
     @EnvironmentObject private var state: AppState
     @Binding var searchText: String
     @Binding var isShowingAllGrid: Bool
     var onOpenMill: ((CustomPaper, Bool) -> Void)? = nil
     @State private var selectedCategory: PresetCategory = .all
-    @State private var scrollIndex: Int = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var normalizedQuery: String {
         PaperSearch.normalized(searchText)
@@ -250,9 +237,12 @@ struct PresetCollectionView: View {
                     Button("Import Papers…") { PaperFiles.importPapers() }
                     Button("Community Papers…") { CommunityBrowser.shared.open() }
                 } label: {
+                    // Menu takes its accessibility name from its label
+                    // content; a modifier on the Menu itself is ignored.
                     Image(systemName: "ellipsis.circle")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .accessibilityLabel("Paper actions")
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -264,9 +254,8 @@ struct PresetCollectionView: View {
                 HStack(spacing: 6) {
                     ForEach(PresetCategory.allCases) { category in
                         Button(action: {
-                            withAnimation(.easeInOut(duration: 0.15)) {
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) {
                                 selectedCategory = category
-                                scrollIndex = 0
                             }
                         }) {
                             Text(category.rawValue)
@@ -280,6 +269,7 @@ struct PresetCollectionView: View {
                                 .foregroundStyle(selectedCategory == category ? Color.white : Color.primary)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(selectedCategory == category ? .isSelected : [])
                     }
 
                     Spacer()
@@ -299,10 +289,10 @@ struct PresetCollectionView: View {
                     }
                     .buttonStyle(.plain)
                     .help("Create new custom paper")
+                    .accessibilityLabel("New paper")
                 }
             }
 
-            // Carousel or Grid Content
             if filteredPresets.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "doc.text.magnifyingglass")
@@ -329,8 +319,7 @@ struct PresetCollectionView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 100)
-            } else if isShowingAllGrid || isSearching {
-                // Multi-Column Grid
+            } else {
                 ScrollView {
                     LazyVGrid(
                         columns: [
@@ -358,79 +347,6 @@ struct PresetCollectionView: View {
                 }
                 .frame(height: gridViewportHeight)
                 .layoutPriority(1)
-            } else {
-                // Horizontal Carousel with Interactive Scroll Affordance
-                ScrollViewReader { proxy in
-                    ZStack(alignment: .trailing) {
-                        // Horizontal Scroll View
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(Array(filteredPresets.enumerated()), id: \.element.id) { index, preset in
-                                    let custom = state.customPapers.first { $0.id == preset.id }
-                                    ModernPresetCard(
-                                        preset: preset,
-                                        isSelected: preset.id == state.textureID,
-                                        isCustom: custom != nil,
-                                        customPaper: custom,
-                                        onOpenMill: onOpenMill
-                                    ) {
-                                        state.isComparingOriginal = false
-                                        state.textureID = preset.id
-                                    }
-                                    .id(index)
-                                }
-                            }
-                            .padding(.leading, 1)
-                            .padding(.trailing, 28) // Extra padding for the floating chevron
-                            .padding(.vertical, 2)
-                        }
-
-                        // A fade is useful only when three cards exceed the viewport.
-                        if filteredPresets.count > 2 {
-                            HStack {
-                                Spacer()
-                                LinearGradient(
-                                    colors: [
-                                        Color(nsColor: .windowBackgroundColor).opacity(0),
-                                        Color(nsColor: .windowBackgroundColor).opacity(0.85)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                                .frame(width: 32)
-                                .allowsHitTesting(false)
-                            }
-                        }
-
-                        // Floating Circular Scroll Next Button (matching reference)
-                        if filteredPresets.count > 2 {
-                            Button(action: {
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    scrollIndex = (scrollIndex + 2) % filteredPresets.count
-                                    proxy.scrollTo(scrollIndex, anchor: .leading)
-                                }
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color(nsColor: .controlBackgroundColor))
-                                        .frame(width: 28, height: 28)
-                                        .shadow(color: .black.opacity(0.12), radius: 4, x: 0, y: 2)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(Color.primary.opacity(0.8))
-                                }
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .offset(x: -2)
-                            .help("Scroll more papers")
-                        }
-                    }
-                }
             }
         }
     }
