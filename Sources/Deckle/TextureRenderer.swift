@@ -51,9 +51,15 @@ enum TextureRenderer {
 
     /// Small bounded LRU caches, all confined to the main thread by existing
     /// call patterns (menu UI, overlay windows) — no locking, no actors.
-    private static var fieldCache = LRUCache<String, [Float]>(capacity: 16)
-    private static var tileCache = LRUCache<String, NSImage>(capacity: 16)
-    private static var compositeCache = LRUCache<String, NSImage>(capacity: 8)
+    ///
+    /// A 2x field, grain tile, or composite is 1 MB each, so those caches
+    /// hold only the overlay's working set: enough for a slider drag to reuse
+    /// its field and tile, and for two displays at different backing scales.
+    /// Library thumbnails stay cheap to revisit through the preview cache,
+    /// which keeps only the small finished swatch.
+    private static var fieldCache = LRUCache<String, [Float]>(capacity: 2)
+    private static var tileCache = LRUCache<String, NSImage>(capacity: 2)
+    private static var compositeCache = LRUCache<String, NSImage>(capacity: 2)
     private static var previewCache = LRUCache<String, NSImage>(capacity: 24)
 
     /// Clears every cache and resets diagnostic counters. Exposed for tests
@@ -64,6 +70,19 @@ enum TextureRenderer {
         compositeCache.removeAll()
         previewCache.removeAll()
         cacheMetrics = CacheMetrics()
+    }
+
+    /// Bytes of field and pixel storage the caches currently retain. Exposed
+    /// so tests can hold the renderer to a memory budget.
+    static var cachedByteCount: Int {
+        let fields = fieldCache.values.reduce(0) { $0 + $1.count * MemoryLayout<Float>.stride }
+        let images = [tileCache, compositeCache, previewCache].reduce(0) { total, cache in
+            cache.values.reduce(total) { sum, image in
+                let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+                return sum + (cgImage.map { $0.bytesPerRow * $0.height } ?? 0)
+            }
+        }
+        return fields + images
     }
 
     /// User-tunable grain adjustments, applied on top of any preset.
@@ -335,49 +354,56 @@ enum TextureRenderer {
         let darkStrength = min(1, preset.darkStrength * Float(adjustments.strength))
         let lightStrength = min(1, preset.lightStrength * Float(adjustments.strength))
 
-        var pixels = [UInt8](repeating: 0, count: pixelSize * pixelSize * 4)
-        for i in 0..<(pixelSize * pixelSize) {
-            let delta = noise[i] - 0.5
-            let r: CGFloat
-            let g: CGFloat
-            let b: CGFloat
-            let alpha: Float
-            if delta < 0 {
-                r = darkR; g = darkG; b = darkB
-                alpha = min(1, -delta * 2) * darkStrength
-            } else {
-                r = lightR; g = lightG; b = lightB
-                alpha = min(1, delta * 2) * lightStrength
+        let image = rgbaImage(pixelSize: pixelSize) { pixels in
+            for i in 0..<(pixelSize * pixelSize) {
+                let delta = noise[i] - 0.5
+                let r: CGFloat
+                let g: CGFloat
+                let b: CGFloat
+                let alpha: Float
+                if delta < 0 {
+                    r = darkR; g = darkG; b = darkB
+                    alpha = min(1, -delta * 2) * darkStrength
+                } else {
+                    r = lightR; g = lightG; b = lightB
+                    alpha = min(1, delta * 2) * lightStrength
+                }
+                // Premultiplied RGBA
+                let a = CGFloat(alpha)
+                pixels[i * 4 + 0] = UInt8(r * a * 255)
+                pixels[i * 4 + 1] = UInt8(g * a * 255)
+                pixels[i * 4 + 2] = UInt8(b * a * 255)
+                pixels[i * 4 + 3] = UInt8(a * 255)
             }
-            // Premultiplied RGBA
-            let a = CGFloat(alpha)
-            pixels[i * 4 + 0] = UInt8(r * a * 255)
-            pixels[i * 4 + 1] = UInt8(g * a * 255)
-            pixels[i * 4 + 2] = UInt8(b * a * 255)
-            pixels[i * 4 + 3] = UInt8(a * 255)
         }
+        // Report the tile at half its pixel size so grain stays fine on
+        // Retina displays (2 device pixels per point).
+        let pointSize = NSSize(width: pixelSize / 2, height: pixelSize / 2)
+        return image.map { NSImage(cgImage: $0, size: pointSize) } ?? NSImage(size: pointSize)
+    }
 
-        let image = pixels.withUnsafeMutableBytes { buffer -> NSImage? in
-            guard
-                let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
-                let context = CGContext(
-                    data: buffer.baseAddress,
-                    width: pixelSize,
-                    height: pixelSize,
-                    bitsPerComponent: 8,
-                    bytesPerRow: pixelSize * 4,
-                    space: colorSpace,
-                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-                ),
-                let cgImage = context.makeImage()
-            else {
-                return nil
-            }
-            // Report the tile at half its pixel size so grain stays fine on
-            // Retina displays (2 device pixels per point).
-            return NSImage(cgImage: cgImage, size: NSSize(width: pixelSize / 2, height: pixelSize / 2))
+    /// Fills a square premultiplied RGBA8 sRGB bitmap in place. Writing into
+    /// Core Graphics' own buffer avoids a second full-size copy: an image
+    /// made from caller-owned bytes must be copied, and the freed Swift array
+    /// would stay in the process footprint. `fill` must write every byte.
+    private static func rgbaImage(pixelSize: Int, fill: (UnsafeMutablePointer<UInt8>) -> Void) -> CGImage? {
+        guard
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+            let context = CGContext(
+                data: nil,
+                width: pixelSize,
+                height: pixelSize,
+                bitsPerComponent: 8,
+                bytesPerRow: pixelSize * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ),
+            let data = context.data
+        else {
+            return nil
         }
-        return image ?? NSImage(size: NSSize(width: pixelSize / 2, height: pixelSize / 2))
+        fill(data.bindMemory(to: UInt8.self, capacity: pixelSize * pixelSize * 4))
+        return context.makeImage()
     }
 
     /// Sums the preset's octaves of tileable value noise (plus optional weave
@@ -492,49 +518,32 @@ enum TextureRenderer {
         let darkStrength = min(1, preset.darkStrength * Float(adjustments.strength))
         let lightStrength = min(1, preset.lightStrength * Float(adjustments.strength))
 
-        var pixels = [UInt8](repeating: 0, count: pixelSize * pixelSize * 4)
-        for py in 0..<pixelSize {
-            for px in 0..<pixelSize {
-                let delta = noise[py * pixelSize + px] - 0.5
-                let r: CGFloat
-                let g: CGFloat
-                let b: CGFloat
-                let alpha: Float
-                if delta < 0 {
-                    r = darkR; g = darkG; b = darkB
-                    alpha = min(1, -delta * 2) * darkStrength
-                } else {
-                    r = lightR; g = lightG; b = lightB
-                    alpha = min(1, delta * 2) * lightStrength
+        let image = rgbaImage(pixelSize: pixelSize) { pixels in
+            for py in 0..<pixelSize {
+                for px in 0..<pixelSize {
+                    let delta = noise[py * pixelSize + px] - 0.5
+                    let r: CGFloat
+                    let g: CGFloat
+                    let b: CGFloat
+                    let alpha: Float
+                    if delta < 0 {
+                        r = darkR; g = darkG; b = darkB
+                        alpha = min(1, -delta * 2) * darkStrength
+                    } else {
+                        r = lightR; g = lightG; b = lightB
+                        alpha = min(1, delta * 2) * lightStrength
+                    }
+                    let a = CGFloat(alpha)
+                    let o = (py * pixelSize + px) * 4
+                    pixels[o + 0] = UInt8(r * a * 255)
+                    pixels[o + 1] = UInt8(g * a * 255)
+                    pixels[o + 2] = UInt8(b * a * 255)
+                    pixels[o + 3] = UInt8(a * 255)
                 }
-                let a = CGFloat(alpha)
-                let o = (py * pixelSize + px) * 4
-                pixels[o + 0] = UInt8(r * a * 255)
-                pixels[o + 1] = UInt8(g * a * 255)
-                pixels[o + 2] = UInt8(b * a * 255)
-                pixels[o + 3] = UInt8(a * 255)
             }
         }
-
-        let image = pixels.withUnsafeMutableBytes { buffer -> NSImage? in
-            guard
-                let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
-                let context = CGContext(
-                    data: buffer.baseAddress,
-                    width: pixelSize,
-                    height: pixelSize,
-                    bitsPerComponent: 8,
-                    bytesPerRow: pixelSize * 4,
-                    space: colorSpace,
-                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-                ),
-                let cgImage = context.makeImage()
-            else {
-                return nil
-            }
-            return NSImage(cgImage: cgImage, size: NSSize(width: logical, height: logical))
-        }
-        return image ?? NSImage(size: NSSize(width: logical, height: logical))
+        let pointSize = NSSize(width: logical, height: logical)
+        return image.map { NSImage(cgImage: $0, size: pointSize) } ?? NSImage(size: pointSize)
     }
 
     /// Synthesizes the v2 grain field directly at `size` × `size` samples —
@@ -671,7 +680,6 @@ enum TextureRenderer {
             }
         }
 
-        var base = realp
         if let setup = fftSetup(log2n: log2n) {
             let transformed = realp.withUnsafeMutableBufferPointer { rp -> Bool in
                 imagp.withUnsafeMutableBufferPointer { ip -> Bool in
@@ -690,10 +698,17 @@ enum TextureRenderer {
                 // undo its implicit ×(n·n) gain before the field's values
                 // are meaningful.
                 var divisor = Float(n * n)
-                vDSP_vsdiv(realp, 1, &divisor, &realp, 1, vDSP_Length(realp.count))
-                base = realp
+                inPlace(&realp) { vDSP_vsdiv($0, 1, &divisor, $0, 1, $1) }
             }
         }
+
+        // Hand the real half over without a copy-on-write duplicate, and drop
+        // the imaginary half: the allocator keeps freed megabyte buffers in
+        // the process footprint, so every extra field-sized array raises the
+        // app's resident memory for good.
+        imagp = []
+        var base = realp
+        realp = []
 
         // Empirical signed-field normalization: center on the field's actual
         // mean, then scale by its actual peak deviation, so the visible
@@ -702,12 +717,12 @@ enum TextureRenderer {
         var mean: Float = 0
         vDSP_meanv(base, 1, &mean, vDSP_Length(base.count))
         var negativeMean = -mean
-        vDSP_vsadd(base, 1, &negativeMean, &base, 1, vDSP_Length(base.count))
+        inPlace(&base) { vDSP_vsadd($0, 1, &negativeMean, $0, 1, $1) }
         var maxDeviation: Float = 0
         vDSP_maxmgv(base, 1, &maxDeviation, vDSP_Length(base.count))
         if maxDeviation > 0 {
             var divisor = maxDeviation
-            vDSP_vsdiv(base, 1, &divisor, &base, 1, vDSP_Length(base.count))
+            inPlace(&base) { vDSP_vsdiv($0, 1, &divisor, $0, 1, $1) }
         }
         for i in 0..<base.count {
             base[i] = base[i] * 0.5 + 0.5
@@ -1020,6 +1035,19 @@ enum TextureRenderer {
         return setup
     }
 
+    /// Runs an element-wise vDSP operation with one pointer as both input and
+    /// output. Passing `array` and `&array` to the same call makes Swift copy
+    /// the whole buffer first.
+    private static func inPlace(
+        _ values: inout [Float],
+        _ operation: (UnsafeMutablePointer<Float>, vDSP_Length) -> Void
+    ) {
+        values.withUnsafeMutableBufferPointer { buffer in
+            guard let address = buffer.baseAddress else { return }
+            operation(address, vDSP_Length(buffer.count))
+        }
+    }
+
     /// Scatters deterministic, toroidally wrapped elongated fiber splats
     /// across the field, standing in for the visible fiber strands of real
     /// paper. Count and intensity are driven by the weave's amplitude, so
@@ -1168,6 +1196,8 @@ private struct LRUCache<Key: Hashable, Value> {
     init(capacity: Int) {
         self.capacity = capacity
     }
+
+    var values: Dictionary<Key, Value>.Values { storage.values }
 
     mutating func get(_ key: Key) -> Value? {
         guard let value = storage[key] else { return nil }
