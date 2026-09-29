@@ -19,31 +19,31 @@ Research checked 16 September 2026. These are appearance presets, not clinically
 | Quiet Gray | Near-neutral gray with a faint fine texture, for people who want some material character. |
 | Evening Shade | Stronger, slightly warm dimming with minimal texture; not a sleep or blue-light claim. |
 
-The original 22 papers remain available unchanged. The four new recipes use stable seeds and the existing v3 engine, bringing the library to 26. They appear first in the library; search for `quiet reading` to isolate them. New installations default to Clear Veil. Existing saved selections and persisted desk setups are retained. The default Read, Write, and Unwind setups now point to Book Cream, Clear Veil, and Evening Shade respectively.
+The four presets have fixed seeds and render with the current v4 spectral fiber engine, like every one of the 26 built-in papers; their fiber and roughness settings are zero (Clear Veil) or near zero. They appear first in the library; search for `quiet reading` to isolate them. New installations default to Clear Veil. The starter Read, Write, and Unwind desk setups use Book Cream, Clear Veil, and Evening Shade respectively.
 
 Quiet collection swatches show a fixed 22% sample instead of the legacy boosted texture preview. A swatch is not a live reading of the current screen. The real overlay continues to follow the intensity and grain controls.
 
 ## Rendered-tile measurements
 
-At 22% intensity, 1× grain size, 1× grain strength, and 1× backing scale:
+Measured with the v4 engine on 30 September 2026, at 22% intensity, 1× grain size, 1× grain strength, and 1× backing scale:
 
 | Preset | White luminance reduction | Grain luminance SD | Gray-on-white contrast, worst sampled pair | Light-on-dark contrast, worst sampled pair |
 | --- | ---: | ---: | ---: | ---: |
 | Clear Veil | 5.22% | 0.0000% | 5.11:1 | 9.28:1 |
-| Book Cream | 4.84% | 0.1653% | 4.94:1 | 8.98:1 |
+| Book Cream | 4.84% | 0.1652% | 4.94:1 | 8.98:1 |
 | Quiet Gray | 7.53% | 0.1154% | 5.01:1 | 9.00:1 |
 | Evening Shade | 17.64% | 0.0552% | 4.96:1 | 8.45:1 |
 
-Soft Wove's grain luminance SD was 2.7537% under the same model: the three textured additions reduce this engineering measure by approximately 94–98%. That is **not** a measured reduction in eye strain. SD measures variation across an otherwise uniform white sample, not overall luminance reduction.
+Soft Wove's grain luminance SD is 2.5566% under the same model: the three textured quiet presets are lower on this engineering measure by approximately 94–98% (Book Cream 93.5%, Quiet Gray 95.5%, Evening Shade 97.8%). That is **not** a measured reduction in eye strain. SD measures variation across an otherwise uniform white sample, not overall luminance reduction.
 
 Method: sample the production RGBA composite tile, apply window opacity using premultiplied source-over in sRGB, and calculate linear-light relative luminance. Light-mode samples use sRGB gray 0.42 on white; dark-mode samples use 0.8 on 0.1333. Contrast uses conservative independent foreground/background extrema across the tile, not just mean colors. Automated tests repeat the contrast checks at 1× and 2× backing scales. These values do not represent physical display nits, ambient reflections, or calibrated monitor measurements. Other app colors and higher intensity or grain settings can produce different results.
 
 ## Verification
 
 ```sh
-swift test --filter ReadingPresetTests
-DECKLE_RENDER_DIR="$PWD/docs" swift test
+swift test --filter ReadingPresetTests          # prints the READING measurements above
+DECKLE_RENDER_DIR="$PWD/docs" swift test --filter ReadingProofTests
 make app UNIVERSAL=1
 ```
 
-The comparison images `reading-proof-light.png` and `reading-proof-dark.png` render the same text under the actual production overlay tiles at 22%, alongside bare screen and original Soft Wove. They are native view renders, not photographs of a monitor or live menu-bar captures. Live menu-bar verification remains limited by the native automation tool's inability to access the status-item popup.
+The comparison images `reading-proof-light.png` and `reading-proof-dark.png` render the same text under the actual production overlay tiles at 22%, alongside bare screen and original Soft Wove. They are native view renders, not photographs of a monitor or live menu-bar captures.

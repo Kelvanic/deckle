@@ -1,13 +1,14 @@
 ---
 name: Deckle
-description: A quiet, tactile macOS control surface for making screens feel like paper.
+description: A quiet, tactile macOS menu bar studio for making screens feel like paper.
 colors:
-  brand-rust: "#B34A22"
-  action-blue: "#007AFF"
+  brand-rust: "#B34A21"
+  brand-rust-dark: "#E69163"
+  system-accent: "#007AFF"
   success-green: "#34C759"
   warning-orange: "#FF9500"
   danger-red: "#FF3B30"
-  promo-purple: "#AF52DE"
+  sample-ink: "#29241C"
   window-light: "#F5F5F7"
   surface-light: "#FFFFFF"
   label-light: "#1D1D1F"
@@ -19,87 +20,96 @@ colors:
   secondary-label-dark: "#AEAEB2"
   hairline-dark: "#FFFFFF14"
 typography:
-  headline:
-    fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
-    fontSize: "19px"
-    fontWeight: 700
-    lineHeight: 1.2
-  title:
-    fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
+  paper-name:
+    fontFamily: "New York, ui-serif, Georgia, serif"
+    fontSize: "27px"
+    fontWeight: 500
+  wordmark:
+    fontFamily: "New York, ui-serif, Georgia, serif"
+    fontSize: "23px"
+    fontWeight: 500
+  section-serif:
+    fontFamily: "New York, ui-serif, Georgia, serif"
     fontSize: "15px"
-    fontWeight: 700
-    lineHeight: 1.25
-  body:
+    fontWeight: 500
+  header:
     fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
     fontSize: "13px"
+    fontWeight: 700
+  body:
+    fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
+    fontSize: "12px"
     fontWeight: 500
-    lineHeight: 1.35
   label:
     fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
     fontSize: "11px"
-    fontWeight: 600
-    lineHeight: 1.25
+    fontWeight: 500
   micro:
     fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
     fontSize: "10px"
-    fontWeight: 500
-    lineHeight: 1.2
+    fontWeight: 400
+  meta-mono:
+    fontFamily: "SF Mono, ui-monospace, monospace"
+    fontSize: "9px"
+    fontWeight: 600
+    letterSpacing: "1.8px"
   mono:
     fontFamily: "SF Mono, ui-monospace, monospace"
-    fontSize: "10px"
-    fontWeight: 600
-    lineHeight: 1.2
+    fontSize: "11px"
+    fontWeight: 500
 rounded:
-  metric: "4px"
-  badge: "6px"
-  texture: "8px"
-  icon: "10px"
-  control: "12px"
-  panel: "14px"
+  thumbnail: "3px"
+  sample: "5px"
+  setup: "6px"
+  track: "8px"
+  badge: "10px"
+  search: "12px"
+  banner: "14px"
   drawer: "16px"
-  hero: "18px"
   capsule: "999px"
 spacing:
-  hairline: "2px"
+  track: "3px"
   compact: "4px"
   control: "6px"
   item: "8px"
+  setup: "9px"
   group: "10px"
   section: "12px"
-  panel: "14px"
-  card: "16px"
-  window: "18px"
+  shell: "14px"
+  sample: "16px"
+  editor: "18px"
 components:
-  button-primary:
-    backgroundColor: "{colors.action-blue}"
-    textColor: "{colors.surface-light}"
-    typography: "{typography.body}"
-    rounded: "{rounded.capsule}"
-    padding: "6px 10px"
-    height: "36px"
-  button-icon:
+  mode-tab:
     backgroundColor: "{colors.surface-light}"
     textColor: "{colors.label-light}"
-    rounded: "{rounded.capsule}"
-    size: "36px"
+    typography: "{typography.body}"
+    rounded: "{rounded.setup}"
+    padding: "7px 0"
   search-field:
     backgroundColor: "{colors.surface-light}"
     textColor: "{colors.label-light}"
     typography: "{typography.body}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.search}"
     padding: "8px 10px"
-    height: "40px"
-  hero-card:
+  paper-sample:
     backgroundColor: "{colors.surface-light}"
-    textColor: "{colors.label-light}"
-    rounded: "{rounded.hero}"
+    textColor: "{colors.sample-ink}"
+    typography: "{typography.paper-name}"
+    rounded: "{rounded.sample}"
     padding: "16px"
+    width: "342px"
+    height: "148px"
   paper-card:
     backgroundColor: "{colors.surface-light}"
     textColor: "{colors.label-light}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.sample}"
     padding: "8px"
     width: "108px"
+  setup-card:
+    backgroundColor: "{colors.window-light}"
+    textColor: "{colors.label-light}"
+    rounded: "{rounded.setup}"
+    padding: "9px"
   filter-chip:
     backgroundColor: "{colors.window-light}"
     textColor: "{colors.label-light}"
@@ -112,9 +122,17 @@ components:
     typography: "{typography.label}"
     rounded: "{rounded.capsule}"
     padding: "4px 10px"
+  control-tab-selected:
+    backgroundColor: "{colors.system-accent}"
+    textColor: "{colors.surface-light}"
+    typography: "{typography.label}"
+    rounded: "{rounded.capsule}"
+    padding: "6px 10px"
 ---
 
 # Design System: Deckle
+
+This document describes the interface as implemented in `Sources/Deckle`. When code and this document disagree, update whichever is wrong in the same change.
 
 ## Overview
 
@@ -122,204 +140,174 @@ components:
 
 Deckle is opened briefly while someone is reading, writing, or working across one or more displays. Its controls should feel like well-kept tools on a calm desk: familiar, precise, tactile, and ready to disappear as soon as the paper is chosen.
 
-The interface is a restrained macOS product surface. System materials and semantic colors provide adaptation; one accent identifies selection and primary action. Texture is the subject, not decoration. Dense controls remain legible without turning the popover into a dashboard.
+The interface is a restrained macOS product surface. System materials and semantic colors provide light/dark adaptation; Deckle Rust marks selection. Actual procedural paper samples carry the visual identity. Dense controls remain legible without turning the popover into a dashboard.
 
 Deckle rejects ornamental glassmorphism, neon utility palettes, oversized marketing typography, nested card stacks, and motion that delays a task.
 
 **Key Characteristics:**
 
 - System-native and immediately understandable
-- Quiet neutral surfaces with one active accent
-- Paper previews as the dominant visual material
+- Quiet neutral surfaces with one brand accent
+- Paper samples as the dominant visual material
 - Compact controls with explicit labels and state
-- Focused modes instead of stacking every section vertically
-- Fast, interruptible transitions with no bounce
+- One focused mode at a time instead of stacking every section vertically
+- Fast, interruptible transitions
 
-**The Focused Surface Rule.** When a task expands, the competing summary surface leaves. All Papers hides the hero card; search hides summary content; Compact restores it.
+**The One Mode Rule.** The menu shows exactly one of *Your desk*, *Paper library*, or *Controls and settings*. Searching and browsing live in Paper library; opening the controls replaces the current content rather than stacking a drawer over it.
 
-**The Honest Material Rule.** The system window may use native translucency. Content surfaces inside it are opaque or strongly tonal. Empty translucent regions are forbidden.
+**The Honest Material Rule.** The popover background is `windowBackgroundColor` at 96% opacity. Content surfaces inside it are opaque or strongly tonal. Empty translucent regions below the footer are a sizing bug.
 
 ## Colors
 
-The palette is adaptive and restrained. In SwiftUI, system semantic colors remain the runtime source of truth. The fixed light and dark values above are cross-tool equivalents for documentation and generated components.
+In SwiftUI, system semantic colors are the runtime source of truth. The fixed neutral values in the front matter are cross-tool approximations for documentation and generated components.
 
-### Primary
+### Accents
 
-- **Deckle Rust** (`brand-rust`): product identity, selected filters on branded surfaces, and documentation accents. It must not flood large regions.
-- **Action Blue** (`action-blue`): Open Mill and explicit primary actions that need the standard macOS action signal.
+- **Deckle Rust** (`brand-rust`, `brand-rust-dark`): `StudioStyle.rust`, sRGB (0.70, 0.29, 0.13) in light appearance and (0.90, 0.57, 0.39) in dark. It is applied as the menu's `.tint` and marks the selected paper card, selected desk setup, selected category chip, the Paper Mill button, the "Your desk" link, the search-result count, the showing-status dot, and the update dot on the controls button.
+- **System accent** (`system-accent`, blue by default, follows the user's macOS accent color): `Color.accentColor` for the Update capsule and banner badge, the focused search field, the controls panel icon and selected control tab, and Paper Mill's prominent buttons and sliders.
 
-### Secondary
+### Semantic colors
 
-- **Success Green** (`success-green`): active overlay state, successful checks, and healthy preview feedback.
-- **Warning Orange** (`warning-orange`): snooze state and contrast guidance that needs attention but does not block saving.
-- **Danger Red** (`danger-red`): destructive actions, update notification dots, and errors only.
-- **Workshop Purple** (`promo-purple`): rare discovery prompts such as Paper Mill education, never core navigation.
+- **Success Green** (`success-green`): Paper Mill's Stop Preview button while a preview is live, the "Up to date" badge, and Good/Excellent retention grades.
+- **Warning Orange** (`warning-orange`): the snooze countdown heading, update failures, Reduced contrast grades, and Paper Mill's contrast warning.
+- **Danger Red** (`danger-red`): Heavy contrast loss grades, the destructive Delete button, and the Settings tab's Quit Deckle button.
 
 ### Neutral
 
-- **Quiet Window** (`window-light`, `window-dark`): outer popover and secondary toolbar layer.
-- **Paper Surface** (`surface-light`, `surface-dark`): hero, editor, search, and control surfaces.
-- **Ink Label** (`label-light`, `label-dark`): primary text and active iconography.
+- **Quiet Window** (`window-light`, `window-dark`): popover background.
+- **Paper Surface** (`surface-light`, `surface-dark`): `controlBackgroundColor` surfaces: search field, banners, selected mode tab, control panel, unselected paper cards.
+- **Ink Label** (`label-light`, `label-dark`): primary text.
 - **Soft Graphite** (`secondary-label-light`, `secondary-label-dark`): descriptions, metadata, inactive labels, and help copy.
-- **Hairline** (`hairline-light`, `hairline-dark`): one-pixel containment where tonal separation alone is insufficient.
+- **Hairline** (`hairline-light`, `hairline-dark`): primary color at 4–15% opacity for containment.
+- **Sample Ink** (`sample-ink`): text over light paper samples, sRGB (0.16, 0.14, 0.11); dark samples use white.
 
-**The One Active Accent Rule.** Accent color marks current selection, focus, or the primary action. Inactive controls stay neutral.
-
-**The Semantic State Rule.** Green means active or successful, orange means caution or snoozed, and red means destructive, failed, or newly available. Never reuse those colors decoratively.
+**The Semantic State Rule.** Green means live or successful, orange means caution or snoozed, and red means destructive or heavy loss. Do not reuse them decoratively.
 
 ## Typography
 
-**Display Font:** Apple system font
-**Body Font:** Apple system font
-**Label/Mono Font:** SF Mono for changing values and engine metadata
-
-**Character:** Native, compact, and matter-of-fact. Weight and scale establish hierarchy; font changes do not.
+**Serif:** the system serif (`.serif` design, New York) for the wordmark, paper names, and the Desk setups heading.
+**Sans:** the Apple system font for all controls and copy.
+**Mono:** the system monospaced design for changing values and sample metadata.
 
 ### Hierarchy
 
-- **Headline** (700, 19px, 1.2): selected paper name inside the hero card.
-- **Title** (700, 15px, 1.25): panel and editor titles.
-- **Body** (500, 13px, 1.35): buttons, status copy, paper names, and primary controls.
-- **Label** (600, 11px, 1.25): section labels, chips, slider labels, and compact commands.
-- **Micro** (500, 10px, 1.2): secondary explanations and metadata.
-- **Mono** (600, 10px, 1.2): engine status, percentages, timers, and numerical readouts.
+- **Paper name** (serif 27, medium): the selected paper on the desk sample; scales down to 70% to stay on one line.
+- **Wordmark** (serif 23, medium): "Deckle" in the menu header.
+- **Section serif** (serif 15, medium): "Desk setups".
+- **Header** (13, bold): "Paper library" and "Search Results".
+- **Body** (12): mode tabs, paper card names (semibold), slider labels, setup names.
+- **Label** (11): chips, control tabs, header buttons, desk sample subtitle, status text.
+- **Micro** (9–10): tagline, footer, setup status, card tags, notes.
+- **Meta mono** (mono 9, semibold, 1.8-point tracking, uppercase): "ON YOUR DESK" / "PAPER SAMPLE · 22%" on the desk sample.
+- **Mono** (mono 9–11): percentages, counts, and the ⌥⌘P badge.
 
 **The Stable Number Rule.** Every changing percentage, timer, count, and comfort metric uses monospaced or monospaced-digit typography so controls do not shift.
 
-**The Native Voice Rule.** Buttons use sentence case and short verbs. Uppercase is reserved for terse engine metadata, never ordinary labels.
+**The Native Voice Rule.** Buttons use sentence case and short verbs. Uppercase is reserved for the desk sample's metadata line.
 
 ## Elevation
 
-Deckle uses a hybrid of tonal layering and restrained ambient shadows. Surfaces are separated first by system background roles, then by a low-opacity hairline. Shadows indicate a surface that is physically above another surface, not decoration.
+Surfaces are separated by system background roles and low-opacity hairlines, not shadows. Shadows appear in exactly three places:
 
-### Shadow Vocabulary
-
-- **Control Lift:** `0 1px 2px rgba(0, 0, 0, 0.04)`. Circular toolbar controls and compact capsules.
-- **Texture Lift:** `0 1px 3px rgba(0, 0, 0, 0.08)`. Circular texture preview against the hero surface.
-- **Hero Lift:** `0 3px 8px rgba(0, 0, 0, 0.06)`. The primary status surface only.
-- **Paging Lift:** `0 2px 4px rgba(0, 0, 0, 0.12)`. Floating carousel navigation over paper cards.
-
-**The Ambient Only Rule.** Shadows remain diffuse and below 12% black. If an edge looks drawn or dirty, the shadow is too strong.
-
-**The One Raised Hero Rule.** The hero may be raised. Inner metric groups and control drawers use tonal separation, not another large shadow.
+- The selected paper card's white checkmark: black at 40%, 2-point radius, so it reads over light samples.
+- The Update capsule: system accent at 30%, 3-point radius, 1-point offset.
+- The update banner: system accent at 8%, 6-point radius, 2-point offset.
 
 ## Components
 
-### Popover Shell
+### Popover shell
 
-- **Width:** fixed at 370 points.
-- **Padding:** 14 points around the content.
-- **Rhythm:** 12-point section spacing.
-- **Sizing:** fit current vertical content. Variable modes must not leave stale window material below the footer.
-- **Theme:** use `NSColor.windowBackgroundColor` and native appearance adaptation.
+- **Width:** fixed at 370 points; **padding:** 14 points; **section spacing:** 14 points.
+- **Sizing:** `MenuPopover` measures the content and resizes the native MenuBarExtra window to fit it, keeping the top edge anchored and clamping to the screen's visible frame. Content taller than the visible frame scrolls.
+- **Header:** the serif wordmark and 10-point tagline "A softer place to work.", a bordered small **Paper Mill** / **Close Mill** button with a scissors icon, and a 28-point controls button (sliders icon, or an xmark on a 10% rust fill while controls are open) with a 5-point rust dot when an update is available.
+- **Mode tabs:** "Your desk" and "Paper library" as two equal-width buttons in a 3-point-padded track (primary at 4.5%, 8-point radius). The selected tab has a control-background fill, 6-point radius, and semibold text.
+- **Footer:** the ⌥⌘P badge with "toggles anywhere" (or "unavailable" if registration failed), a GitHub link, and Quit.
 
-### Top Actions
+### Your desk
 
-- **Shape:** compact capsule for Open Mill; 36-point circles for notification and account actions.
-- **Icon badge:** 22-point colored circle inside the Open Mill capsule.
-- **State:** Open Mill changes to Close Mill while the editor exists. Notification color follows update status.
-- **Elevation:** Control Lift.
+- **Paper sample:** 342 × 148 points, 5-point radius, 12% hairline, no shadow. Quiet reading papers show the real overlay tile at a fixed 22% opacity; other papers use a boosted preview so their grain is recognizable. Over it: the meta-mono line, a leaf symbol, the serif paper name, and an 11-point subtitle, with 16-point padding.
+- **Status row:** a 5-point dot (rust while the paper shows, secondary otherwise) and one of: "Comparing · bare screen", "Paper Mill draft on screen", "Snoozed", "Enabled · follows your app rules", or "Paused".
+- **Controls:** Paper intensity (5–45%) and Matte finish (0–100%) sliders with monospaced values, then bordered small **Pause paper** / **Enable paper** and **Compare original** / **Back to paper** buttons.
 
-### Search Field
+### Desk setups
 
-- **Shape:** gently rounded field (12-point radius), 40-point target height.
-- **Background:** control surface with an 8% semantic hairline.
-- **Focus:** accent-colored icon and 50% accent hairline.
-- **Behavior:** normalized whitespace; search immediately enters a focused results grid and removes the hero.
+- Serif heading with a rust **Save current…** / **Cancel** text button that reveals a name field and **Save**.
+- A three-column grid with 8-point spacing. Each card has 9-point padding and a 6-point radius, and shows a bookmark (or a checkmark when the current settings match), the intensity in mono 9, the name, and "Paper + finish" or "Paper missing".
+- Selected: rust at 8% with a 55% rust hairline. Unselected: primary at 3.5% with an 8% hairline.
+- At most eight setups. Saving and applying are disabled while a Paper Mill draft is previewed.
 
-### Hero Status Surface
+### Paper library
 
-- **Shape:** 18-point radius with 16-point internal padding.
-- **Content order:** engine metadata, texture identity, status, primary action, then intensity.
-- **Preview:** 48-point circular live texture inside a 50-point holder.
-- **Primary action:** 38-point capsule. Neutral while active; accent-filled when enabling or resuming.
-- **Secondary action:** 38-point circular More control.
-- **Numbers:** monospaced percentages and timers.
+- **Search field:** 12-point radius, 8 × 10-point padding, control background at 90% with an 8% hairline. Focus turns the icon and a 50% hairline to the system accent. Search ignores case, accents, and repeated whitespace and matches terms in any order.
+- **Header:** "Paper library" (or "Search Results" with a rust count capsule), a rust "Your desk" link, and a `…` menu with New Paper…, Import Papers…, and Community Papers… — the stable entry points for creating and adding papers.
+- **Category chips** (hidden while searching): All, Light, Dark, My Papers, plus a circular + for a new paper. Capsule with 4 × 10-point padding; selected chips are rust with white text, unselected are primary at 6%. Leaving the library resets the category to All.
+- **Grid:** three flexible columns with 8-point spacing, inside a row-aware fixed-height viewport capped at 356 points (360 while searching).
 
-### Paper Cards
+### Paper cards
 
-- **Width:** 108 points. Three cards plus two 8-point gaps must fit the popover content width.
-- **Shape:** 12-point card radius and 8-point texture radius.
-- **Internal padding:** 8 points.
-- **Selection:** accent hairline and a subtle 9% accent wash. Do not rely on color alone; retain the checkmark.
-- **Text:** one-line paper name and one-line material tag.
+- **Width:** 108 points with 8-point padding; three cards plus two 8-point gaps fit the content width.
+- **Sample:** 92 × 52 points, 3-point radius.
+- **Card:** 5-point radius. Selected: rust at 9% with a 1.5-point rust hairline and a white checkmark. Unselected: control background at 75% with a 1-point 8% hairline.
+- **Text:** one-line semibold name and one-line tag (Custom, No grain, Quiet reading, Dark paper, Woven, or the start of the subtitle).
+- **Context menu:** custom papers offer Edit in Paper Mill…, Export Paper…, and Delete; built-ins offer Duplicate in Paper Mill….
 
-### Paper Library
+### Controls and settings
 
-- **Entry:** the library opens from the "Paper library" tab or by searching; the home tab shows the hero and desk setups instead of a carousel.
-- **All Papers mode:** hide the hero and promo surfaces, show category chips, then a three-column vertical grid.
-- **Expanded viewport:** row-aware fixed height, capped at 236 points.
-- **Search viewport:** row-aware fixed height, capped at 360 points.
-- **Window fit:** the popover shell uses current content height so Compact removes expanded grid space immediately.
-- **Transition:** 200ms ease-out. No spring, bounce, or full-height slide.
-
-### Filter Chips
-
-- **Shape:** capsule, 4-point vertical and 10-point horizontal padding.
-- **Unselected:** quiet neutral fill with primary text.
-- **Selected:** current accent fill with contrasting text.
-- **Behavior:** switching back to Compact resets hidden category state to All.
-
-### Control Drawer
-
-- **Outer shape:** 16-point radius with 12-point padding.
-- **Inner control surface:** 14-point radius with 14-point padding.
-- **Tabs:** horizontally scrollable capsules with full labels. A trailing fade communicates overflow.
-- **Behavior:** remains reachable during search; opening All Papers closes it.
+- **Container:** 12-point padding, 16-point radius, primary at 3% with a 5% hairline. Its inner content card has 14-point padding and a 14-point radius on control background at 90%.
+- **Tabs:** Grain, Snooze, Displays, App Rules, Settings — capsules with an icon and full label, 10 × 6-point padding. Selected tabs are filled with the system accent. The row scrolls horizontally, always overflows at 370 points, and shows a 20-point trailing fade; selecting a tab centres it so every tab is reachable by clicking.
 
 ### Notifications
 
-- **Shape:** 14-point tonal surface.
-- **Leading symbol:** 34 to 36-point rounded badge.
-- **State:** blue/accent for progress and availability, green for success, orange for failure, red only for the unread dot.
-- **Dismissal:** remember the dismissed version, not a global boolean.
+- 14-point tonal banners with 12-point padding and a 36-point badge (10-point radius).
+- **Update available:** accent badge and hairline, an **Update** capsule, and a dismiss button that remembers the dismissed version.
+- **Installing:** a small progress indicator and "Deckle will relaunch automatically."
+- **Failure:** an orange badge and hairline, the reason, and **Open release page** when a newer version is known.
 
 ### Paper Mill
 
-- **Window:** resizable, minimum 400 by 500 points; position beside the MenuBarExtra within the owning display's visible frame.
-- **Preview:** 8-point rounded texture image with a subtle outline.
-- **Primary control:** Preview on Screen is prominent and becomes Stop Preview while active.
-- **Comfort readout:** compact two-column metric surface with monospaced numbers and a semantic grade chip.
-- **Performance:** render thumbnail at 1x during adjustment and 2x when settled; debounce real-overlay updates.
+- **Window:** "New Paper" or "Edit Paper"; titled, closable, miniaturizable, resizable, floating; minimum 400 × 500 points. It opens beside the MenuBarExtra window with a 12-point gap (left first, then right, otherwise clamped and the menu is hidden), up to 430 points wide and 580–720 points tall, within the owning display's visible frame.
+- **Content:** 18-point padding and 14-point spacing: an 8-point-radius thumbnail with a 15% outline; **Preview on Screen** (prominent; ⌘P) that becomes a green **Stop Preview**; the name field; Comfort Starting Points; Tint; sliders for Wash, Weave, Blotch and, for fiber-engine papers, Fiber Strength, Fiber Angle, and Surface Roughness; the Appearance & Contrast card with a grade chip; the shared Intensity slider; and Delete (when editing), Cancel, and Create/Save.
+- **Performance:** the thumbnail renders at 1× while a control changes and 2× once settled; the live overlay updates 180 ms after the last edit.
+
+## Motion
+
+- Tab, chip, and control-tab selection: 150 ms ease-in-out.
+- Banner dismissal: 200 ms ease-out.
+- Closing the controls panel: spring, 0.3 s response, 0.8 damping.
+- Overlay show and hide: 0.4 s opacity fade.
+- Mode and library size changes are not animated, so the native window resizes directly to its final size.
+- With Reduce Motion on, interface animations are removed; the overlay's opacity fade remains.
+
+## Accessibility
+
+- Every icon-only control has a spoken name; sliders speak their value in percent or degrees; pickers carry names even when their labels are hidden.
+- Selected paper cards, setups, category chips, mode tabs, and control tabs expose the selected state instead of relying on color.
+- The menu bar icon's name comes from its image description ("Deckle, paper on" / "Deckle, paper off"), because MenuBarExtra ignores accessibility modifiers on its label.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** use the Apple system font and native semantic colors for application UI.
-- **Do** keep the popover at 370 points with 14-point outer padding and 12-point section rhythm.
+- **Do** use the Apple system font and native semantic colors for controls; reserve the serif for the wordmark, paper names, and section headings.
+- **Do** keep the popover at 370 points with 14-point padding and spacing.
 - **Do** give every vertical `ScrollView` inside MenuBarExtra a deterministic viewport height.
-- **Do** hide the hero when All Papers or search becomes the primary task.
-- **Do** use `.fixedSize(horizontal: false, vertical: true)` at the popover root when content height changes by mode.
 - **Do** keep card dimensions explicit: 108-point paper cards, 8-point gaps, three columns.
-- **Do** use 150 to 250ms state transitions with ease-out timing and no visible bounce.
 - **Do** use monospaced digits for live percentages, countdowns, counts, and comfort metrics.
-- **Do** use checkmarks, labels, or symbols alongside semantic color.
-- **Do** show carousel fades and arrows only when content actually overflows.
+- **Do** pair semantic color with a checkmark, label, or symbol.
+- **Do** make every item in a horizontally scrolling row reachable by clicking, and signal overflow.
 - **Do** keep Paper Mill comfort language factual and non-medical.
+- **Do** respect Reduce Motion for interface animations.
 
 ### Don't:
 
 - **Don't** use `.frame(maxHeight:)` alone for a flexible grid inside MenuBarExtra. It may collapse while the window keeps translucent empty space.
-- **Don't** stack the hero, control drawer, and expanded library in one vertical state.
-- **Don't** use decorative glassmorphism. Native window material is sufficient; content surfaces must remain readable and bounded.
+- **Don't** stack the desk, controls, and library in one vertical state.
+- **Don't** use decorative glassmorphism, gradient text, neon accents, or side-stripe borders.
 - **Don't** nest cards inside cards. Use spacing, dividers, and tonal groups before another container.
-- **Don't** use gradient text, neon accents, side-stripe borders, or oversized display typography.
 - **Don't** use success, warning, or danger colors outside their semantic meaning.
-- **Don't** hide a selected category when returning to Compact; reset it to All.
 - **Don't** truncate control-tab labels to make them fit. Keep the tab row scrollable and signal overflow.
-- **Don't** animate layout with spring bounce. Motion communicates a state change and then gets out of the way.
 - **Don't** leave blank material below the footer after a mode transition. If that occurs, the sizing contract is broken.
 
+## Review renders
 
-## Studio workflow (current implementation)
-
-The main menu now opens on **Your desk**: a 342 × 148-point paper sample with a serif name, a precise intensity control, Pause/Enable, and Compare original. Comparison temporarily hides the overlay and ends when the menu closes. It does not rewrite a paper, enabled state, or snooze.
-
-**Desk setups** save the working combination of paper, intensity, grain size, grain strength, and matte finish. Read, Write, and Unwind provide starting points. Up to eight setups can be saved; right-click removes one. An active Paper Mill draft must be finished before saving or applying setups.
-
-**Paper library** replaces the home carousel with a focused searchable grid. **Controls and settings** replaces the main content rather than stacking a drawer over it. Paper Mill remains a permanent header action; New, Import, and Community stay in the library action menu.
-
-The studio uses Deckle Rust for selection and native controls, system semantic surfaces for light/dark adaptation, and small 5–8-point corners inspired by paper samples. Serif typography is reserved for the product and material names; small controls remain in the system font. Internal engine versions are omitted from the main user flow. Actual procedural paper samples carry the visual identity. Paper Mill appearance estimates intentionally exclude the separate Matte finish adjustment.
-
-Review renders in `docs/studio-*.png` come from actual SwiftUI views with isolated sample preferences; they are not live menu-bar screenshots. Live multi-display geometry and menu dismissal still require bundled-app UI verification.
+`docs/studio-desk.png`, `docs/studio-desk-dark.png`, `docs/studio-library.png`, and `docs/paper-mill.png` are rendered from the actual SwiftUI views with isolated sample preferences by `DECKLE_RENDER_DIR="$PWD/docs" swift test --filter StudioRenderTests`. They are not live menu-bar screenshots; live multi-display geometry and menu dismissal still need bundled-app verification.

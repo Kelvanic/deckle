@@ -367,7 +367,7 @@ struct MenuView: View {
                         .background(Color.primary.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                    Text(HotKey.isRegistered ? "toggles anywhere" : "in use by another app")
+                    Text(HotKey.isRegistered ? "toggles anywhere" : "unavailable")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -375,7 +375,7 @@ struct MenuView: View {
                 .accessibilityAddTraits(.isStaticText)
                 .accessibilityLabel(HotKey.isRegistered
                                     ? "Option Command P toggles the paper from any app"
-                                    : "Option Command P is in use by another app")
+                                    : "The Option Command P shortcut is unavailable")
 
                 Spacer()
 
