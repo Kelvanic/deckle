@@ -8,9 +8,10 @@ import AppKit
 ///   deckle://on                     enable the texture
 ///   deckle://off                    disable the texture
 ///   deckle://toggle                 flip it
-///   deckle://snooze?minutes=30      snooze (default 30)
+///   deckle://snooze?minutes=30      snooze 1–1440 minutes (default 30)
 ///   deckle://resume                 cancel a snooze
-///   deckle://texture?id=soft-wove   switch texture (id or exact name)
+///   deckle://texture?id=classic-matte   switch paper; `id` or `name`
+///                                   matches either, ignoring case and punctuation
 ///   deckle://intensity?percent=25   set intensity (5–45)
 ///   deckle://grain?size=2&strength=1.2
 enum URLCommands {

@@ -6,8 +6,9 @@ import Carbon.HIToolbox
 /// permissions (unlike CGEventTap-based approaches).
 enum HotKey {
     private static var hotKeyRef: EventHotKeyRef?
-    /// False when another app already owns ⌥⌘P, so the menu never
-    /// advertises a shortcut that does nothing.
+    /// False when RegisterEventHotKey fails, so the menu never advertises a
+    /// shortcut that was not registered. Carbon does not report a clash with
+    /// another app's identical shortcut, so success is not a guarantee.
     private(set) static var isRegistered = false
 
     static func register() {

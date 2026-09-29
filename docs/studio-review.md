@@ -1,6 +1,8 @@
 # Paper studio review
 
-Implemented on `codex/paper-studio`.
+Implemented on `codex/paper-studio` and merged in #36 for Deckle 1.9.0.
+
+> **Status (30 September 2026):** historical record of that review. Since then, #53 fixed the updater unused-result warnings mentioned below and moved built-in papers to the v4 spectral fiber engine, and a later documentation pass replaced the Paper Mill screenshot with a native render. The status-item menu can now be inspected through the Accessibility API after a real click (an `AXPress` action alone does not open it). See `README.md` for current behavior.
 
 ## Confirmed bugs fixed
 

@@ -1,5 +1,7 @@
 # Deckle 1.9.0 release plan
 
+> **Status:** completed. Deckle 1.9.0 (build 20) was published on 16 September 2026. This file is kept as the record of that release; follow the release steps in `AGENTS.md` for future releases.
+
 Target: Deckle 1.9.0, build 20. Deckle 1.8.0, build 19 was the latest
 published release when this candidate was prepared; the new build number exceeds
 every published build.

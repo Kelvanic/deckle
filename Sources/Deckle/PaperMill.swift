@@ -456,7 +456,8 @@ private struct PaperMillThumbnail: View, Equatable {
     }
 }
 
-private struct PaperMillView: View {
+/// Internal (not private) so StudioRenderTests can render it for the docs.
+struct PaperMillView: View {
     @State var draft: CustomPaper
     let isNew: Bool
     let dismiss: () -> Void

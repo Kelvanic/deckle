@@ -31,10 +31,10 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 
 | Area | Files | Responsibility |
 |---|---|---|
-| App entry and state | `DeckleApp.swift`, `AppState.swift` | MenuBarExtra, application lifecycle, persisted settings, transient preview state |
+| App entry and state | `DeckleApp.swift`, `AppState.swift`, `DeskSetup.swift` | MenuBarExtra, application lifecycle, persisted settings and desk setups, tolerant loading, transient preview state |
 | Overlay | `OverlayController.swift`, `OverlayWindow.swift` | One click-through retained-mode window per display |
 | Rendering | `TexturePreset.swift`, `TextureRenderer.swift` | Versioned texture recipes, legacy/spectral/fiber engines, bounded caches |
-| Main menu | `MenuView.swift`, `HeroCardView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `QuickControlsView.swift`, `MenuPopover.swift` | Status, desk setups, search, paper library, controls, popover sizing |
+| Main menu | `MenuView.swift`, `HeroCardView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `PaperSearch.swift`, `QuickControlsView.swift`, `MenuPopover.swift`, `MenuDismiss.swift`, `StudioStyle.swift` | Status, desk setups, search, paper library, controls, popover sizing and dismissal, shared palette and paper samples |
 | Paper creation | `PaperMill.swift`, `PaperComfort.swift` | Custom paper editing, live preview, comfort estimates, import/export |
 | Community and updates | `CommunityBrowser.swift`, `UpdateManager.swift` | Community paper index, download/install, GitHub release updates |
 | Automation | `HotKey.swift`, `URLCommands.swift` | Global shortcut and `deckle://` commands |
@@ -71,7 +71,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - Renderer caches are bounded LRUs and intentionally main-thread-only. Do not call them concurrently without redesigning synchronization.
 - Cache keys must include every render-relevant input and exclude irrelevant metadata such as a paper name.
 - Avoid uncached 2x spectral rendering directly in a parent SwiftUI body that observes unrelated state. Isolate expensive thumbnails in equatable child views, use 1x while dragging, and debounce full overlay pushes.
-- Any renderer change needs deterministic tests. Legacy changes also need the pinned byte hash to remain unchanged unless compatibility is intentionally broken.
+- Any renderer change needs deterministic tests. The pinned byte hashes for legacy and v3 output must remain unchanged unless compatibility is intentionally broken.
 
 ### Paper Mill
 
@@ -80,17 +80,18 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - `CustomPaper(duplicating:)` must render pixel-identically to its built-in source until edited. Changing the tint releases the copied speckle colours and light/dark classification.
 - Live preview must render through the production overlay pipeline, not a separate approximation.
 - Clear `AppState.previewPaper` on every exit path: Stop Preview, Cancel, Save, Delete, programmatic close, and `windowWillClose`.
-- Paper Mill window state and the menu's Open/Close label must agree even when the window is miniaturized.
+- Paper Mill window state and the menu's Paper Mill/Close Mill label must agree even when the window is miniaturized.
 - Position the editor against the actual MenuBarExtra content window only. Never identify it using generic `Panel` or `StatusBar` class-name matches.
 - Clamp window placement to the owning screen's `visibleFrame`; display coordinates may be negative.
-- `PaperComfort` is design guidance, not a medical claim. Keep labels precise: contrast retention, luminance change, blue-channel reduction, tint temperature, and pattern load.
+- `PaperComfort` is design guidance, not a medical claim. Keep labels precise: contrast retention, luminance change, black/white contrast, blue-channel reduction, tint temperature, pattern load, fiber load, and veil alpha. Estimates model the tint wash only and exclude grain and Matte finish.
 
 ### Menu and secondary windows
 
 - Keep the popover compact and usable at 370 points wide.
-- Search operates across built-in and custom papers. Normalize whitespace and search render-independent metadata without hiding the controls drawer.
-- Category filters must include matching custom papers and must reset when their controls become hidden in compact mode.
-- Horizontal carousels need an explicit overflow affordance; do not show a fade or paging arrow when content fits.
+- The menu shows one mode at a time: Your desk, Paper library, or Controls and settings. Never stack them.
+- Search operates across built-in and custom papers. Normalize case, accents, and whitespace, and search render-independent metadata only; searching must never render textures.
+- Category filters must include matching custom papers and reset to All when the library is left.
+- A horizontally scrolling row needs an explicit overflow affordance, and every item in it must be reachable by clicking. The control tabs always overflow at 370 points, so they keep a trailing fade and centre the selected tab.
 - Preserve stable entry points for New, Import, and Community Papers. A dismissible promo card is not sufficient navigation.
 - `MenuDismiss` may dismiss MenuBarExtra/popover content only. It must not order out `NSColorPanel`, `NSStatusBarWindow`, or arbitrary nonactivating panels, and it must never send a generic `performClose:` down the responder chain.
 - AppKit and observable UI singletons are `@MainActor`. Stored callback closures are not automatically actor-isolated under the Xcode 15 release compiler; hop explicitly with `Task { @MainActor in ... }` before calling them.
@@ -125,7 +126,7 @@ UI and AppKit window behavior often lack a useful unit-test seam. For those chan
 - Avoid force unwraps for external data and window discovery.
 - Imported paper JSON and community data are untrusted. Keep numeric clamping, path sanitization, and fixed-host HTTPS restrictions intact.
 - Do not suppress errors or warnings to hide a root cause.
-- Do not add dependencies for behavior available in Foundation, AppKit, SwiftUI, CoreGraphics, Combine, ServiceManagement, or Accelerate.
+- Do not add dependencies for behavior available in Foundation, AppKit, SwiftUI, CoreGraphics, Combine, ServiceManagement, Accelerate, or Carbon.
 
 ## Documentation
 
@@ -150,6 +151,6 @@ Releases are tag-driven through `.github/workflows/release.yml`.
 3. Commit the version bump.
 4. Create an annotated `vX.Y.Z` tag with message `Deckle X.Y.Z`.
 5. Push the commit and tag.
-6. Verify the workflow builds the universal DMG, signs, notarizes, staples, generates the checksum, and publishes both assets.
+6. Verify the workflow builds the universal DMG, signs, notarizes, staples, generates the checksum, and publishes both assets. Signing and notarization run only when the Developer ID secrets are configured; without them the workflow publishes an ad-hoc build, which the in-app updater refuses to install.
 
 Never move an already published release tag. If a tag-triggered workflow fails before publishing assets, choose explicitly between correcting the unpublished tag and issuing a new patch version.
