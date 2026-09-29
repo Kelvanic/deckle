@@ -22,8 +22,8 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 <table>
   <tr>
-    <td width="46%" align="center"><img src="docs/studio-desk.png" alt="Rendered Deckle desk view with a labelled paper sample, comparison control, and saved desk setups" width="360"></td>
-    <td width="54%" align="center"><img src="docs/paper-mill.png" alt="Paper Mill editor with live screen preview and eye-comfort guidance" width="420"></td>
+    <td width="46%" align="center"><img src="docs/studio-desk.png" alt="Rendered Deckle desk with a blue hero card, dotted-ring companion, selected paper swatch, and saved setups" width="360"></td>
+    <td width="54%" align="center"><img src="docs/paper-mill.png" alt="Paper Mill workbench with draft preview, grouped texture controls, and pinned Create and Cancel actions" width="420"></td>
   </tr>
   <tr>
     <td align="center"><strong>Your paper, your desk.</strong><br><sub>A labelled paper sample, temporary comparison, and one-click saved setups.</sub></td>
@@ -35,7 +35,9 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 - **Desk setups** — start with Read, Write, or Unwind, or save up to eight named combinations of paper, intensity, grain size, grain strength, and matte finish. Applying a setup enables the paper and ends a snooze; display exclusions and app rules still apply. Right-click a setup to remove it. Setups reference your saved papers, so a deleted paper must be restored before its setup can be used.
 - **Compare original** — temporarily see your bare screen without changing saved settings or a snooze. Choose Back to paper or close the menu to end comparison.
-- **A paper-first workspace** — Your desk presents a large labelled sample and your setups; Paper library provides browsing and search; Controls and settings keeps detailed adjustments in a separate view. Desk setups are unavailable while an unsaved Paper Mill draft is being previewed.
+- **A living dotted companion** — Echo's six counter-rotating rings breathe around a pulsing core, with blinking eyes that follow the cursor and a spring squash on click. The native animation uses the geometry and motion parameters from the [Cloudstudio reference](https://cloudstudio.es/). It pauses when the menu is hidden or Reduce Motion is enabled; the desktop overlay stays static.
+- **A complete paper studio** — the library has a swatch-gallery layout; all five controls tabs fit at once; Paper Mill groups draft controls with a pinned Save/Cancel bar; Community Papers has readable recipe cards and dedicated empty/offline states. Illustrated headers fan gently on hover and respect Reduce Motion.
+- **A paper-first workspace** — Your desk presents an interactive paper companion, a labelled sample, and your setups; Paper library provides browsing and search; Controls and settings keeps detailed adjustments in a separate view. Desk setups are unavailable while an unsaved Paper Mill draft is being previewed.
 
 - **26 built-in paper textures**, including a quiet reading collection:
   - *Quiet reading* — Clear Veil (no grain), Book Cream, Quiet Gray, Evening Shade
@@ -61,6 +63,13 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 
 <p align="center"><img src="docs/studio-library.png" width="370" alt="Rendered Deckle paper library with material swatches, categories, and import actions"></p>
 <p align="center"><sub>The studio images above are native SwiftUI review renders with isolated sample settings.</sub></p>
+
+<table>
+  <tr>
+    <td width="46%"><img src="docs/studio-controls-snooze.png" alt="Snooze controls with all five navigation tabs and four time cards" width="350"></td>
+    <td width="54%"><img src="docs/studio-community.png" alt="Community Papers gallery rendered with fictional sample recipes and install buttons" width="420"></td>
+  </tr>
+</table>
 
 ## Quiet reading collection
 

@@ -9,7 +9,7 @@ struct DeskSetupsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Desk setups").font(.system(size: 15, weight: .medium, design: .serif))
+                Text("Desk setups").font(.system(size: 15, weight: .bold, design: .rounded))
                 Spacer()
                 Button(isNaming ? "Cancel" : "Save current…") {
                     isNaming.toggle()
@@ -42,7 +42,8 @@ struct DeskSetupsView: View {
                         Button { state.apply(setup) } label: {
                             VStack(alignment: .leading, spacing: 5) {
                                 HStack {
-                                    Image(systemName: selected ? "checkmark.circle.fill" : "bookmark")
+                                    Image(systemName: selected ? "checkmark.circle.fill" : setupSymbol(setup.name))
+                                        .font(.system(size: 15, weight: .medium))
                                     Spacer(minLength: 0)
                                     Text("\(Int(setup.intensity * 100))%")
                                         .font(.system(size: 9, design: .monospaced))
@@ -52,14 +53,14 @@ struct DeskSetupsView: View {
                                 Text(available ? "Paper + finish" : "Paper missing")
                                     .font(.system(size: 9)).foregroundStyle(.secondary)
                             }
-                            .padding(9)
+                            .padding(11)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(selected ? StudioStyle.rust.opacity(0.08) : Color.primary.opacity(0.035))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(selected ? StudioStyle.rust.opacity(0.55) : Color.primary.opacity(0.08)))
+                            .background(selected ? StudioStyle.sky.opacity(0.65) : StudioStyle.panel)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(selected ? StudioStyle.rust.opacity(0.5) : Color.primary.opacity(0.08)))
                             .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(StudioButtonStyle())
                         .disabled(!available || state.previewPaper != nil)
                         .help(available ? "Apply \(setup.name): paper, intensity, grain and matte" : "The paper used by this setup was deleted")
                         .contextMenu {
@@ -78,6 +79,15 @@ struct DeskSetupsView: View {
                 Text("8 setups saved. Right-click a setup to remove it.")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private func setupSymbol(_ name: String) -> String {
+        switch name.lowercased() {
+        case "read": return "book.closed"
+        case "write": return "pencil.tip"
+        case "unwind": return "moon.stars"
+        default: return "bookmark"
         }
     }
 

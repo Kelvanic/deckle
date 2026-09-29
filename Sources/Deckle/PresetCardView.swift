@@ -30,12 +30,12 @@ struct ModernPresetCard: View {
                     PaperSample(preset: preset, size: CGSize(width: 92, height: 52))
                         .equatable()
                     .frame(height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     // Selected checkmark or custom indicator
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(Color.white)
                             .shadow(color: .black.opacity(0.4), radius: 2)
                             .padding(4)
@@ -59,18 +59,18 @@ struct ModernPresetCard: View {
             .padding(8)
             .frame(width: 108)
             .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(isSelected ? StudioStyle.rust.opacity(0.09) : Color(nsColor: .controlBackgroundColor).opacity(0.75))
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? StudioStyle.sky.opacity(0.5) : Color(nsColor: .controlBackgroundColor).opacity(0.75))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(
                         isSelected ? StudioStyle.rust : Color.primary.opacity(0.08),
                         lineWidth: isSelected ? 1.5 : 1
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(StudioButtonStyle())
         .contextMenu {
             if let customPaper {
                 Button("Edit in Paper Mill…") {
@@ -180,14 +180,18 @@ struct PresetCollectionView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
+            if isShowingAllGrid && !isSearching {
+                StudioBanner(eyebrow: "The paper library", title: "Find your kind of quiet.",
+                             detail: "Light, dark, textured, or entirely your own.", symbol: "square.stack.3d.up", color: StudioStyle.sage)
+            }
             // Header Row: "Presets" on left, "All papers >" toggle on right
             // Header Row
             HStack {
                 HStack(spacing: 6) {
                     if isSearching {
                         Text("Search Results")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         Text("\(filteredPresets.count)")
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -198,7 +202,7 @@ struct PresetCollectionView: View {
                             .clipShape(Capsule())
                     } else {
                         Text(isShowingAllGrid ? "Paper library" : "Paper samples")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
 
                         if !isShowingAllGrid && filteredPresets.count > 2 {
@@ -222,16 +226,13 @@ struct PresetCollectionView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(StudioStyle.rust)
                     .buttonStyle(.plain)
-                } else {
-                    Button(action: {
-                        let expanding = !isShowingAllGrid
-                        isShowingAllGrid = expanding
-                        if !expanding { selectedCategory = .all }
-                    }) {
+                } else if !isShowingAllGrid {
+                    // The expanded library returns through the menu's Your desk tab.
+                    Button(action: { isShowingAllGrid = true }) {
                         HStack(spacing: 4) {
-                            Text(isShowingAllGrid ? "Your desk" : "All papers")
+                            Text("All papers")
                                 .font(.system(size: 12, weight: .medium))
-                            Image(systemName: isShowingAllGrid ? "chevron.up" : "chevron.right")
+                            Image(systemName: "chevron.right")
                                 .font(.system(size: 10, weight: .semibold))
                         }
                         .foregroundStyle(StudioStyle.rust)
@@ -328,7 +329,8 @@ struct PresetCollectionView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 100)
+                .frame(height: 132)
+                .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 16))
             } else if isShowingAllGrid || isSearching {
                 // Multi-Column Grid
                 ScrollView {
@@ -432,6 +434,10 @@ struct PresetCollectionView: View {
                     }
                 }
             }
+        }
+        // Filters are hidden while collapsed, so a hidden category must not persist.
+        .onChange(of: isShowingAllGrid) { expanded in
+            if !expanded { selectedCategory = .all }
         }
     }
 }

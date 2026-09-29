@@ -5,7 +5,6 @@ import AppKit
 struct HeroCardView: View {
     @EnvironmentObject private var state: AppState
 
-    private var ink: Color { state.texture.isDark ? .white : Color(red: 0.16, green: 0.14, blue: 0.11) }
     private var status: String {
         if state.isComparingOriginal { return "Comparing · bare screen" }
         if state.previewPaper != nil { return "Paper Mill draft on screen" }
@@ -14,33 +13,53 @@ struct HeroCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ZStack(alignment: .topLeading) {
-                PaperSample(preset: state.texture, size: CGSize(width: 342, height: 148))
-                    .equatable()
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text(state.texture.isQuietReading ? "PAPER SAMPLE · 22%" : "ON YOUR DESK")
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 0) {
+                HStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("MAKE YOURSELF\nCOMFORTABLE.")
                             .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                            .tracking(1.8)
-                        Spacer()
-                        Image(systemName: "leaf")
+                            .tracking(1.3)
+                        Text("A softer\nside of screen.")
+                            .font(.system(size: 25, weight: .bold, design: .rounded))
+                            .tracking(-1)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("A little company for your cursor.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    Text(state.texture.name)
-                        .font(.system(size: 27, weight: .medium, design: .serif))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Text(state.texture.subtitle)
-                        .font(.system(size: 11))
-                        .lineLimit(2)
+                    .padding(.leading, 18)
+                    Spacer(minLength: 0)
+                    PaperBallView()
+                        .frame(width: 140, height: 140)
                 }
-                .foregroundStyle(ink)
-                .padding(16)
+                .frame(height: 158)
+                .background(StudioStyle.sky)
+                HStack(spacing: 11) {
+                    PaperSample(preset: state.texture, size: CGSize(width: 44, height: 44))
+                        .equatable()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.12)))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(state.texture.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .lineLimit(1)
+                        Text(state.texture.subtitle)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    Text(state.texture.isQuietReading ? "22%\nSAMPLE" : "PAPER\nSAMPLE")
+                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+                .padding(12)
+                .background(StudioStyle.panel)
             }
-            .frame(height: 148)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
-            .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.primary.opacity(0.12)))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.primary.opacity(0.07)))
 
             HStack(spacing: 6) {
                 Circle().fill(state.shouldShowOverlay && !state.isComparingOriginal ? StudioStyle.rust : .secondary)
@@ -80,6 +99,7 @@ struct HeroCardView: View {
                           systemImage: state.shouldShowOverlay ? "pause" : "play")
                         .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(StudioActionStyle(prominent: true))
                 .disabled(state.previewPaper != nil)
                 Button {
                     state.isComparingOriginal.toggle()
@@ -88,10 +108,10 @@ struct HeroCardView: View {
                           systemImage: "rectangle.on.rectangle")
                         .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(StudioActionStyle(prominent: false))
                 .disabled(!state.shouldShowOverlay && state.previewPaper == nil && !state.isComparingOriginal)
                 .help("Temporarily hide the paper. Closing the menu restores it.")
             }
-            .buttonStyle(.bordered)
             .controlSize(.small)
             .font(.system(size: 11))
         }

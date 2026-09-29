@@ -70,56 +70,114 @@ final class CommunityBrowser: ObservableObject {
     }
 }
 
-private struct CommunityView: View {
+struct CommunityView: View {
     @ObservedObject var browser: CommunityBrowser
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
+            StudioBanner(eyebrow: "Community papers", title: "Good paper gets shared.",
+                         detail: "Small recipes from other desks. Find a finish to make your own.",
+                         symbol: "person.2", color: StudioStyle.sage)
             switch browser.status {
             case .idle, .loading:
-                ProgressView("Loading community papers…")
-                    .frame(maxWidth: .infinity, minHeight: 120)
-            case .failed(let message):
-                VStack(spacing: 8) {
-                    Text(message).foregroundStyle(.secondary)
-                    Button("Retry") { Task { await browser.load() } }
+                VStack(spacing: 12) {
+                    ProgressView().controlSize(.small)
+                    Text("Gathering papers…").font(.system(size: 13, weight: .medium))
+                    Text("Opening the community collection.").font(.caption).foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, minHeight: 120)
+                .frame(maxWidth: .infinity, minHeight: 160)
+            case .failed(let message):
+                VStack(spacing: 10) {
+                    Image(systemName: "wifi.exclamationmark").font(.system(size: 25)).foregroundStyle(.secondary)
+                    Text(message).font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                    Text("Your saved papers are still available in the library.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button("Try again") { Task { await browser.load() } }
+                        .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, minHeight: 170)
             case .loaded:
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(browser.entries) { entry in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(entry.name).font(.body)
-                                    Text("\(entry.description) — \(entry.author)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button(browser.installing.contains(entry.id) ? "…" : "Install") {
+                HStack {
+                    Text("THE COLLECTION").font(.system(size: 9, weight: .semibold, design: .monospaced)).tracking(1)
+                    Spacer()
+                    Text("\(browser.entries.count) papers").font(.system(size: 10)).foregroundStyle(.secondary)
+                }
+                if browser.entries.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "tray").font(.system(size: 26)).foregroundStyle(.secondary)
+                        Text("The shelf is waiting.").font(.system(size: 17, weight: .semibold, design: .rounded))
+                        Text("Share the first paper using the community link below.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 160)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 10) {
+                            ForEach(browser.entries) { entry in
+                                CommunityPaperRow(entry: entry, installing: browser.installing.contains(entry.id)) {
                                     Task { await browser.install(entry) }
                                 }
-                                .controlSize(.small)
                             }
-                            .padding(.vertical, 5)
                         }
                     }
+                    .frame(minHeight: 180, maxHeight: 340)
                 }
-                .frame(minHeight: 160, maxHeight: 320)
             }
-            Divider()
             HStack {
-                Text("Papers are community PRs — add yours!")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Made something lovely?").font(.system(size: 12, weight: .semibold))
+                    Text("Share a recipe with the community.").font(.system(size: 10)).foregroundStyle(.secondary)
+                }
                 Spacer()
-                Link("deckle-papers on GitHub ↗",
-                     destination: URL(string: "https://github.com/YellowFoxH4XOR/deckle-papers")!)
-                    .font(.caption)
+                Link(destination: URL(string: "https://github.com/YellowFoxH4XOR/deckle-papers")!) {
+                    Label("Contribute", systemImage: "arrow.up.right")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                // Link ignores the container tint and would fall back to system blue.
+                .foregroundStyle(StudioStyle.rust)
             }
+            .padding(12)
+            .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 12))
         }
-        .padding(16)
-        .frame(width: 420)
+        .padding(18)
+        .frame(width: 440)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .tint(StudioStyle.rust)
+    }
+}
+
+private struct CommunityPaperRow: View {
+    let entry: CommunityBrowser.Entry
+    let installing: Bool
+    let install: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // Metadata-only index: this is a document icon, not a fabricated texture preview.
+            Image(systemName: "doc.text")
+                .font(.system(size: 24, weight: .light))
+                .frame(width: 46, height: 60)
+                .background(StudioStyle.sage.opacity(0.5), in: RoundedRectangle(cornerRadius: 9))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(entry.name).font(.system(size: 14, weight: .semibold, design: .rounded))
+                Text("by " + entry.author).font(.system(size: 10)).foregroundStyle(StudioStyle.rust)
+                Text(entry.description).font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button(action: install) {
+                Text(installing ? "Adding…" : "Install")
+                    .font(.system(size: 10, weight: .semibold))
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(StudioStyle.sky, in: Capsule())
+            }
+            .buttonStyle(StudioButtonStyle())
+            .disabled(installing)
+        }
+        .padding(12)
+        .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.07)))
     }
 }

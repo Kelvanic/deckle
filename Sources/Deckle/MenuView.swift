@@ -20,7 +20,7 @@ struct MenuView: View {
     }
 
     private var content: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             topHeaderBar
             HStack(spacing: 0) {
                 studioTab("Your desk", selected: !isLibraryFocused && !isDetailsExpanded) {
@@ -36,8 +36,8 @@ struct MenuView: View {
                 }
             }
             .padding(3)
-            .background(Color.primary.opacity(0.045))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(StudioStyle.sky.opacity(0.35))
+            .clipShape(Capsule())
 
             if case .available(let version) = updater.status, dismissedUpdateVersion != version {
                 updateBanner(version: version)
@@ -82,11 +82,12 @@ struct MenuView: View {
             Text(title)
                 .font(.system(size: 12, weight: selected ? .semibold : .regular))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 7)
-                .background(selected ? Color(nsColor: .controlBackgroundColor) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(.vertical, 9)
+                .foregroundStyle(selected ? Color(nsColor: .windowBackgroundColor) : Color.primary)
+                .background(selected ? Color.primary : Color.clear)
+                .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(StudioButtonStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -94,9 +95,10 @@ struct MenuView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Deckle")
-                    .font(.system(size: 23, weight: .medium, design: .serif))
-                Text("A softer place to work.")
-                    .font(.system(size: 10))
+                    .font(.system(size: 25, weight: .heavy, design: .rounded))
+                Text("LESS GLASS. MORE FEELING.")
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .tracking(1)
                     .foregroundStyle(.secondary)
             }
             Spacer()
