@@ -38,9 +38,8 @@ final class TextureRendererTests: XCTestCase {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
-    /// djb2 hash, matching both `TextureRenderer.stableSeed(_:)` and
-    /// `CustomPaper.legacySeed(from:)` — every id-derived seed in the engine
-    /// uses this exact algorithm.
+    /// djb2 hash, matching `CustomPaper.legacySeed(from:)` — the seed the
+    /// original legacy generator derived from a paper's id.
     private func djb2(_ string: String) -> UInt64 {
         var hash: UInt64 = 5381
         for byte in string.utf8 {
@@ -99,7 +98,7 @@ final class TextureRendererTests: XCTestCase {
 
     func testNewCustomPaperIsSpectralAndRoundTripsVersionAndSeed() throws {
         let paper = CustomPaper()
-        XCTAssertEqual(paper.engineVersion, .spectralPlus, "freshly created papers must default to the v3 spectral+ engine")
+        XCTAssertEqual(paper.engineVersion, .spectralFiber, "freshly created papers must default to the current v4 engine")
 
         let data = try JSONEncoder().encode(paper)
         let decoded = try JSONDecoder().decode(CustomPaper.self, from: data)
@@ -111,17 +110,23 @@ final class TextureRendererTests: XCTestCase {
 
     // MARK: - Built-in engine-version contract
 
-    func testBuiltInClassicMatteUsesSpectralPlus() {
+    func testBuiltInClassicMatteUsesCurrentEngine() {
         let preset = TexturePreset.preset(id: "classic-matte")
         XCTAssertEqual(
-            preset.engineVersion, .spectralPlus,
-            "built-in presets use the v3 spectral+ engine; stored v2 and legacy CustomPaper values remain compatible"
+            preset.engineVersion, .spectralFiber,
+            "built-in presets use the v4 engine; stored v3, v2 and legacy CustomPaper values remain compatible"
         )
         XCTAssertNotNil(preset.v3Config)
     }
 
-    func testEveryBuiltInUsesSpectralPlus() {
-        XCTAssertTrue(TexturePreset.all.allSatisfy { $0.engineVersion == .spectralPlus })
+    func testEveryBuiltInUsesCurrentEngine() {
+        XCTAssertTrue(TexturePreset.all.allSatisfy { $0.engineVersion == .current })
+    }
+
+    func testEveryBuiltInHasItsOwnSeed() {
+        let seeds = TexturePreset.all.map(\.seed)
+        XCTAssertEqual(Set(seeds).count, seeds.count, "built-ins sharing a seed and octave recipe render identical grain")
+        XCTAssertFalse(seeds.contains(0))
     }
 
     // MARK: - Legacy (v1) byte fidelity
@@ -157,6 +162,34 @@ final class TextureRendererTests: XCTestCase {
             sha256Hex(rawPixelBytes(tile)),
             "8a4f8f31f581315f7e85e950105b78b1a9feecaa669aa5d44a5eeff7e70cb4bd",
             "legacy-rendered version-less custom paper pixels must stay byte-identical to the original generator"
+        )
+    }
+
+    func testImportedLegacyPaperKeepsGrainWhenIdChanges() throws {
+        let json = """
+        {
+            "id": "shared-paper",
+            "name": "Shared",
+            "tintRed": 0.9,
+            "tintGreen": 0.85,
+            "tintBlue": 0.8,
+            "wash": 0.3,
+            "weave": 0.1,
+            "blotch": 0.2
+        }
+        """.data(using: .utf8)!
+        let original = try JSONDecoder().decode(CustomPaper.self, from: json)
+        // Import and community install assign a fresh id but keep the seed.
+        var imported = try JSONDecoder().decode(
+            CustomPaper.self, from: try JSONEncoder().encode(original))
+        imported.id = "custom-\(UUID().uuidString.lowercased())"
+
+        XCTAssertEqual(imported.engineVersion, .legacy)
+        XCTAssertEqual(imported.seed, djb2("shared-paper"))
+        XCTAssertEqual(
+            rawPixelBytes(TextureRenderer.tile(for: TexturePreset(custom: imported), cached: false)),
+            rawPixelBytes(TextureRenderer.tile(for: TexturePreset(custom: original), cached: false)),
+            "a legacy paper must render the same grain after import reassigns its id"
         )
     }
 
@@ -317,6 +350,95 @@ final class TextureRendererTests: XCTestCase {
         )
     }
 
+    /// Saved v3 custom papers must keep rendering byte-for-byte after later
+    /// engines are added. Pins the CustomPaper path at both backing scales.
+    func testSavedV3CustomPaperRendersWithPinnedHash() {
+        let paper = CustomPaper(
+            id: "custom-v3-pin", name: "Pinned", tintRed: 0.93, tintGreen: 0.9, tintBlue: 0.84,
+            wash: 0.4, weave: 0.12, blotch: 0.15, engineVersion: .spectralPlus, seed: 0x5EED_0003,
+            fiberAngle: 0.6, fiberStrength: 0.5, surfaceRoughness: 0.3
+        )
+        let preset = TexturePreset(custom: paper)
+        XCTAssertEqual(
+            sha256Hex(rawPixelBytes(TextureRenderer.tile(for: preset, backingScale: 1, cached: false))),
+            "4b9ad1e4a971775f8a6621067c2cd74f3cb877e8bdf22f9e235344a400e97fc0"
+        )
+        XCTAssertEqual(
+            sha256Hex(rawPixelBytes(TextureRenderer.tile(for: preset, backingScale: 2, cached: false))),
+            "cb0b050dea8bbebb71ea5dcd3b34e87d36a1f3bdf6adb518e14cc21f1eb7cf0a"
+        )
+    }
+
+    // MARK: - Spectral fiber (v4) engine
+
+    private func v4Preset(seed: UInt64, angle: Float, strength: Float) -> TexturePreset {
+        TexturePreset(
+            v2: v3Preset(id: "v4-\(seed)", seed: seed),
+            v3Config: TextureEngineConfig(fiberAngle: angle, fiberStrength: strength, surfaceRoughness: 0),
+            engineVersion: .spectralFiber
+        )
+    }
+
+    /// Mean absolute change of the fiber darkening between horizontally
+    /// and vertically adjacent samples.
+    private func fiberGradients(angle: Float, engine: TextureEngineVersion) -> (along: Double, across: Double) {
+        let base = TextureRenderer.grainField(for: TexturePreset(
+            v2: v3Preset(id: "grad", seed: 77),
+            v3Config: TextureEngineConfig(fiberAngle: angle, fiberStrength: 0, surfaceRoughness: 0),
+            engineVersion: engine))
+        let fibers = TextureRenderer.grainField(for: TexturePreset(
+            v2: v3Preset(id: "grad", seed: 77),
+            v3Config: TextureEngineConfig(fiberAngle: angle, fiberStrength: 1, surfaceRoughness: 0),
+            engineVersion: engine))
+        let n = Int(Double(base.count).squareRoot())
+        let darkening = zip(base, fibers).map { Double($0 - $1) }
+        var dx = 0.0, dy = 0.0
+        for y in 0..<n {
+            for x in 0..<n {
+                let value = darkening[y * n + x]
+                dx += abs(darkening[y * n + (x + 1) % n] - value)
+                dy += abs(darkening[((y + 1) % n) * n + x] - value)
+            }
+        }
+        return angle == 0 ? (dx, dy) : (dy, dx)
+    }
+
+    func testV4StrandsRunAlongTheFiberAngle() {
+        for angle: Float in [0, .pi / 2] {
+            let v4 = fiberGradients(angle: angle, engine: .spectralFiber)
+            XCTAssertLessThan(v4.along, v4.across * 0.5, "v4 strands must vary slowly along angle \(angle)")
+        }
+        // Documents the v3 defect v4 exists to fix: its carrier runs along
+        // the fiber, drawing rungs across it.
+        let v3 = fiberGradients(angle: 0, engine: .spectralPlus)
+        XCTAssertGreaterThan(v3.along, v3.across)
+    }
+
+    func testV4FiberPassOnlyDarkens() {
+        let base = TextureRenderer.grainField(for: v4Preset(seed: 3, angle: 0.4, strength: 0))
+        let fibers = TextureRenderer.grainField(for: v4Preset(seed: 3, angle: 0.4, strength: 0.8))
+        XCTAssertTrue(zip(base, fibers).allSatisfy { $1 <= $0 })
+        XCTAssertTrue(zip(base, fibers).contains { $1 < $0 })
+    }
+
+    func testV4IsDeterministicAndSeedSensitive() {
+        let a = rawPixelBytes(TextureRenderer.tile(for: v4Preset(seed: 42, angle: 0.9, strength: 0.5), cached: false))
+        let b = rawPixelBytes(TextureRenderer.tile(for: v4Preset(seed: 42, angle: 0.9, strength: 0.5), cached: false))
+        let c = rawPixelBytes(TextureRenderer.tile(for: v4Preset(seed: 43, angle: 0.9, strength: 0.5), cached: false))
+        XCTAssertEqual(a, b)
+        XCTAssertNotEqual(a, c)
+    }
+
+    func testV3AndV4ShareRecipeButRenderDifferently() {
+        let v3 = v3Preset(id: "same", seed: 11)
+        let v4 = TexturePreset(v2: v3, v3Config: v3.v3Config!, engineVersion: .spectralFiber)
+        XCTAssertNotEqual(v3.cacheSignature, v4.cacheSignature)
+        XCTAssertNotEqual(
+            rawPixelBytes(TextureRenderer.tile(for: v3, cached: false)),
+            rawPixelBytes(TextureRenderer.tile(for: v4, cached: false))
+        )
+    }
+
     func testV3SameSeedProducesIdenticalBytes() {
         let a = v3Preset(id: "v3-a", seed: 42)
         let b = v3Preset(id: "v3-b", seed: 42)
@@ -469,9 +591,9 @@ final class TextureRendererTests: XCTestCase {
         XCTAssertEqual(afterColor.compositeMisses, beforeColor.compositeMisses + 1)
     }
 
-    func testV3PresetUsesSpectralPlusEngine() {
+    func testFiberForwardPresetUsesFiberEngine() {
         let preset = TexturePreset.preset(id: "gesso-ground")
-        XCTAssertEqual(preset.engineVersion, .spectralPlus)
+        XCTAssertEqual(preset.engineVersion, .spectralFiber)
         XCTAssertNotNil(preset.v3Config)
         XCTAssertGreaterThan(preset.v3Config?.fiberStrength ?? 0, 0)
     }

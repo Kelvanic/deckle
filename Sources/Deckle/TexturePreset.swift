@@ -11,13 +11,26 @@ import AppKit
 /// original per-pixel value-noise generator byte-for-byte so version-less
 /// saved/exported custom papers keep rendering exactly as they always have;
 /// `.spectral` is retained for v2 custom papers and compatibility fixtures;
-/// `.spectralPlus` is the current engine used by built-ins and new papers.
+/// `.spectralPlus` is retained byte-for-byte for saved v3 papers;
+/// `.spectralFiber` is the current engine used by built-ins and new papers.
 enum TextureEngineVersion: Int, Codable {
     case legacy = 1
     case spectral = 2
-    /// Advanced spectral+ engine: oriented fiber bundles, Gabor-modulated
-    /// grain, and Perlin surface roughness layered over the v2 spectrum.
+    /// v3 spectral+: Gabor-modulated fiber bundles and Perlin surface
+    /// roughness over the v2 spectrum. Its bundles render as clipped patches
+    /// striped across the fiber direction; kept only for saved papers.
     case spectralPlus = 3
+    /// v4: the v3 recipe with fiber strands that run along `fiberAngle`,
+    /// carry fine parallel fibrils, and taper to nothing at both ends.
+    case spectralFiber = 4
+
+    /// Engine for built-ins and newly created papers.
+    static let current: TextureEngineVersion = .spectralFiber
+
+    /// Whether fiber angle, strength and surface roughness affect rendering.
+    var usesFiberConfig: Bool {
+        self == .spectralPlus || self == .spectralFiber
+    }
 }
 
 /// Parameters specific to the v3 (spectral+) engine. Carried alongside
@@ -77,7 +90,7 @@ struct TexturePreset: Identifiable, Equatable {
     /// Per-preset RNG seed feeding the grain field.
     let seed: UInt64
 
-    /// v3 engine configuration. `nil` for legacy/spectral presets.
+    /// Fiber/roughness configuration for v3 and v4. `nil` for legacy/spectral presets.
     let v3Config: TextureEngineConfig?
 
     init(
@@ -93,7 +106,7 @@ struct TexturePreset: Identifiable, Equatable {
         octaves: [(cell: Int, weight: Float)],
         weave: (period: Int, amplitude: Float)?,
         isDark: Bool,
-        engineVersion: TextureEngineVersion = .spectralPlus,
+        engineVersion: TextureEngineVersion = .current,
         seed: UInt64 = 0,
         v3Config: TextureEngineConfig? = nil
     ) {
@@ -111,7 +124,7 @@ struct TexturePreset: Identifiable, Equatable {
         self.isDark = isDark
         self.engineVersion = engineVersion
         self.seed = seed
-        self.v3Config = engineVersion == .spectralPlus
+        self.v3Config = engineVersion.usesFiberConfig
             ? (v3Config ?? .default)
             : v3Config
     }
@@ -138,10 +151,14 @@ struct TexturePreset: Identifiable, Equatable {
         )
     }
 
-    /// Creates a v3 (spectral+) variant of an existing v2 preset by
-    /// replacing its engine version and attaching v3 config while
-    /// preserving every other field (tint, octaves, seed, …).
-    init(v2 base: TexturePreset, v3Config: TextureEngineConfig) {
+    /// Creates a fiber-engine variant of an existing v2 preset by replacing
+    /// its engine version and attaching fiber config while preserving every
+    /// other field (tint, octaves, seed, …).
+    init(
+        v2 base: TexturePreset,
+        v3Config: TextureEngineConfig,
+        engineVersion: TextureEngineVersion = .spectralPlus
+    ) {
         self.init(
             id: base.id,
             name: base.name,
@@ -155,7 +172,7 @@ struct TexturePreset: Identifiable, Equatable {
             octaves: base.octaves,
             weave: base.weave,
             isDark: base.isDark,
-            engineVersion: .spectralPlus,
+            engineVersion: engineVersion,
             seed: base.seed,
             v3Config: v3Config
         )
@@ -260,6 +277,8 @@ struct TexturePreset: Identifiable, Equatable {
 
     var isQuietReading: Bool { Self.readingCollection.contains { $0.id == id } }
 
+    /// Every built-in carries its own seed (djb2 of its id, frozen as a
+    /// literal) so papers sharing an octave recipe still get distinct grain.
     static let all: [TexturePreset] = readingCollection + [
         // MARK: Light papers
         TexturePreset(
@@ -274,7 +293,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.35,
             octaves: [(1, 0.50), (2, 0.30), (4, 0.20)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xC7961D948ED7998F
         ),
         TexturePreset(
             id: "rice-paper",
@@ -288,7 +308,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.50,
             octaves: [(1, 0.30), (4, 0.40), (8, 0.30)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0x7272C412F6B61BED
         ),
         TexturePreset(
             id: "whisper-weave",
@@ -302,7 +323,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.40,
             octaves: [(1, 0.40), (2, 0.35), (4, 0.25)],
             weave: (period: 8, amplitude: 0.12),
-            isDark: false
+            isDark: false,
+            seed: 0x93E20FBC9E404AEC
         ),
         TexturePreset(
             id: "newsprint",
@@ -316,7 +338,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.30,
             octaves: [(1, 0.55), (2, 0.30), (4, 0.15)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0x377D226124C9CCF
         ),
         TexturePreset(
             id: "painters-press",
@@ -330,7 +353,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.40,
             octaves: [(1, 0.30), (2, 0.25), (4, 0.20), (16, 0.25)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0x8B246A4C71E884E5
         ),
         TexturePreset(
             id: "artist-canvas",
@@ -344,7 +368,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.40,
             octaves: [(1, 0.30), (2, 0.30), (4, 0.40)],
             weave: (period: 10, amplitude: 0.28),
-            isDark: false
+            isDark: false,
+            seed: 0x9DE627723A756745
         ),
         // MARK: Warm tones
         TexturePreset(
@@ -359,7 +384,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.30,
             octaves: [(1, 0.35), (2, 0.25), (4, 0.20), (16, 0.20)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xFAF968E9FD88861
         ),
         TexturePreset(
             id: "saddle-linen",
@@ -373,7 +399,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.35,
             octaves: [(1, 0.35), (2, 0.35), (4, 0.30)],
             weave: (period: 6, amplitude: 0.20),
-            isDark: false
+            isDark: false,
+            seed: 0xDABC481A6E28F0F5
         ),
         TexturePreset(
             id: "recycled-kraft",
@@ -387,7 +414,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.30,
             octaves: [(1, 0.30), (2, 0.20), (4, 0.20), (16, 0.30)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xDB6B807523843F95
         ),
         // MARK: Tinted
         TexturePreset(
@@ -402,7 +430,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.35,
             octaves: [(1, 0.45), (2, 0.30), (4, 0.25)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xB5967DD1F65D7714
         ),
         TexturePreset(
             id: "rose-quartz",
@@ -416,7 +445,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.35,
             octaves: [(1, 0.45), (2, 0.30), (4, 0.25)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xC0CC582D31372172
         ),
         TexturePreset(
             id: "sage-press",
@@ -430,7 +460,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.30,
             octaves: [(1, 0.40), (2, 0.30), (4, 0.30)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0x7272E43507ED9DFF
         ),
         TexturePreset(
             id: "nordic-sky",
@@ -444,7 +475,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.35,
             octaves: [(1, 0.45), (2, 0.30), (4, 0.25)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0x7272237CB7458AE8
         ),
         TexturePreset(
             id: "vellum-mist",
@@ -458,7 +490,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.60,
             octaves: [(1, 0.40), (2, 0.30), (8, 0.30)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xC0E06D51FCA203E4
         ),
         TexturePreset(
             id: "monastic-felt",
@@ -472,7 +505,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.35,
             octaves: [(2, 0.30), (4, 0.40), (8, 0.30)],
             weave: nil,
-            isDark: false
+            isDark: false,
+            seed: 0xB16BE8D7268391BB
         ),
         // MARK: Dark
         TexturePreset(
@@ -487,7 +521,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.45,
             octaves: [(1, 0.45), (2, 0.30), (4, 0.25)],
             weave: nil,
-            isDark: true
+            isDark: true,
+            seed: 0xC0389DD22BCB37BA
         ),
         TexturePreset(
             id: "midnight-slate",
@@ -501,7 +536,8 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.40,
             octaves: [(1, 0.40), (2, 0.30), (8, 0.30)],
             weave: nil,
-            isDark: true
+            isDark: true,
+            seed: 0x4D4937A7157ED0FF
         ),
         TexturePreset(
             id: "espresso",
@@ -515,9 +551,10 @@ struct TexturePreset: Identifiable, Equatable {
             lightStrength: 0.40,
             octaves: [(1, 0.40), (2, 0.30), (4, 0.30)],
             weave: nil,
-            isDark: true
+            isDark: true,
+            seed: 0x1AE701539F9C19
         ),
-        // MARK: Spectral+ (v3) — oriented fiber, surface roughness
+        // MARK: Fiber-forward — oriented strands, surface roughness
         TexturePreset(
             id: "gesso-ground",
             name: "Gesso Ground",
@@ -531,7 +568,7 @@ struct TexturePreset: Identifiable, Equatable {
             octaves: [(1, 0.35), (2, 0.35), (4, 0.30)],
             weave: nil,
             isDark: false,
-            engineVersion: .spectralPlus,
+            engineVersion: .spectralFiber,
             seed: 0x9E3779B97F4A7C15,
             v3Config: TextureEngineConfig(fiberAngle: 0.9, fiberStrength: 0.45, surfaceRoughness: 0.20)
         ),
@@ -548,7 +585,7 @@ struct TexturePreset: Identifiable, Equatable {
             octaves: [(1, 0.30), (2, 0.30), (4, 0.40)],
             weave: nil,
             isDark: false,
-            engineVersion: .spectralPlus,
+            engineVersion: .spectralFiber,
             seed: 0xBF58476D1CE4E5B9,
             v3Config: TextureEngineConfig(fiberAngle: 1.57, fiberStrength: 0.50, surfaceRoughness: 0.15)
         ),
@@ -565,7 +602,7 @@ struct TexturePreset: Identifiable, Equatable {
             octaves: [(1, 0.30), (2, 0.25), (4, 0.25), (16, 0.20)],
             weave: nil,
             isDark: false,
-            engineVersion: .spectralPlus,
+            engineVersion: .spectralFiber,
             seed: 0x94D049BB133111EB,
             v3Config: TextureEngineConfig(fiberAngle: 0.35, fiberStrength: 0.35, surfaceRoughness: 0.35)
         ),
@@ -582,7 +619,7 @@ struct TexturePreset: Identifiable, Equatable {
             octaves: [(1, 0.40), (2, 0.30), (4, 0.30)],
             weave: nil,
             isDark: true,
-            engineVersion: .spectralPlus,
+            engineVersion: .spectralFiber,
             seed: 0xA5B9C4E3D2F10678,
             v3Config: TextureEngineConfig(fiberAngle: 1.1, fiberStrength: 0.40, surfaceRoughness: 0.25)
         ),

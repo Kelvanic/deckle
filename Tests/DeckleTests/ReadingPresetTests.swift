@@ -58,6 +58,50 @@ final class ReadingPresetTests: XCTestCase {
         }
     }
 
+    func testDuplicatedBuiltInsRenderLikeTheirSource() throws {
+        for preset in TexturePreset.all {
+            let duplicate = CustomPaper(duplicating: preset)
+            let saved = try JSONDecoder().decode(CustomPaper.self, from: JSONEncoder().encode(duplicate))
+            XCTAssertEqual(saved, duplicate, preset.name)
+            let copy = TexturePreset(custom: saved)
+            XCTAssertEqual(copy.isDark, preset.isDark, preset.name)
+            XCTAssertEqual(try pixels(copy, backingScale: 1), try pixels(preset, backingScale: 1),
+                           "\(preset.name): a duplicate must look like its source until edited")
+        }
+    }
+
+    func testEditingDuplicateTintDerivesAppearanceFromNewTint() {
+        var draft = CustomPaper(duplicating: TexturePreset.preset(id: "clear-veil"))
+        XCTAssertNotNil(draft.darkColor)
+        XCTAssertEqual(draft.darkPaper, false)
+        let unchangedRed = draft.tintRed
+        draft.tintRed = unchangedRed
+        XCTAssertNotNil(draft.darkColor, "re-setting an unchanged tint must keep the source appearance")
+        draft.tintBlue = 0.9
+        XCTAssertNil(draft.darkColor)
+        XCTAssertNil(draft.lightColor)
+        XCTAssertNil(draft.darkPaper)
+        XCTAssertNotNil(draft.baseOctaves, "grain structure is independent of tint")
+    }
+
+    func testImportedRecipeFieldsAreClamped() {
+        let paper = CustomPaper(
+            seed: 5,
+            darkColor: PaperRGB(red: -1, green: 2, blue: 0.5),
+            baseOctaves: (0..<9).map { PaperOctave(cell: [3, 1000, -4, 2][$0 % 4], weight: [0.5, 7, 0.2, -1][$0 % 4]) },
+            weavePeriod: 10_000
+        )
+        var withWeave = paper
+        withWeave.weave = 0.2
+        let preset = TexturePreset(custom: withWeave)
+        let dark = preset.darkColor.usingColorSpace(.sRGB)
+        XCTAssertEqual(dark?.redComponent, 0)
+        XCTAssertEqual(dark?.greenComponent, 1)
+        XCTAssertEqual(preset.octaves.map(\.cell), [4, 64, 1, 4, 64])
+        XCTAssertTrue(preset.octaves.allSatisfy { (0...1).contains($0.weight) && $0.weight > 0 })
+        XCTAssertEqual(preset.weave?.period, 64)
+    }
+
     func testQuietGrainStrengthsRoundTripInCustomPapersAndClampImports() throws {
         let paper = CustomPaper(seed: 17, darkGrainStrength: 0, lightGrainStrength: 0)
         let decoded = try JSONDecoder().decode(CustomPaper.self, from: JSONEncoder().encode(paper))

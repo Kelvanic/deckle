@@ -12,6 +12,7 @@ struct MenuView: View {
     @State private var selectedControlTab: QuickControlsView.ControlTab = .grain
     @State private var dismissedUpdateVersion: String?
     @FocusState private var isSearchFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         MenuPopover(preferredWidth: 370, onHide: { state.isComparingOriginal = false }) {
@@ -151,6 +152,7 @@ struct MenuView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(isSearchFocused ? Color.accentColor : .secondary)
+                .accessibilityHidden(true)
 
             TextField("Search all papers & textures…", text: $searchText)
                 .textFieldStyle(.plain)
@@ -173,6 +175,7 @@ struct MenuView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Clear search")
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 10)
@@ -233,7 +236,7 @@ struct MenuView: View {
             .buttonStyle(.plain)
 
             Button(action: {
-                withAnimation(.easeOut(duration: 0.2)) {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                     dismissedUpdateVersion = version
                 }
             }) {
@@ -246,6 +249,7 @@ struct MenuView: View {
             }
             .buttonStyle(.plain)
             .help("Dismiss notification")
+            .accessibilityLabel("Dismiss update notice")
         }
         .padding(12)
         .background(
@@ -320,7 +324,7 @@ struct MenuView: View {
             Spacer(minLength: 4)
 
             Button(action: {
-                withAnimation(.easeOut(duration: 0.2)) {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                     // Record the version first: restoring `.available` must
                     // not replace this banner with a second banner.
                     dismissedUpdateVersion = updater.latestKnownVersion
@@ -336,6 +340,7 @@ struct MenuView: View {
             }
             .buttonStyle(.plain)
             .help("Dismiss")
+            .accessibilityLabel("Dismiss update message")
         }
         .padding(12)
         .background(
@@ -362,10 +367,15 @@ struct MenuView: View {
                         .background(Color.primary.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                    Text("toggles anywhere")
+                    Text(HotKey.isRegistered ? "toggles anywhere" : "in use by another app")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isStaticText)
+                .accessibilityLabel(HotKey.isRegistered
+                                    ? "Option Command P toggles the paper from any app"
+                                    : "Option Command P is in use by another app")
 
                 Spacer()
 

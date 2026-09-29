@@ -42,7 +42,7 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
   - *Papers* — Soft Wove, Rice Paper, Laid Cotton, Newsprint, Cold Press, Artist Canvas, Felt Side, Frost Glassine
   - *Warm & tinted* — Foxed Amber, Bookcloth, Recycled Kraft, Plum Kozo, Rose Quartz, Sage Press, Nordic Sky
   - *Dark* — Ink Stone, Midnight Slate, Espresso
-  - *Spectral+ (v3)* — Gesso Ground, Linen Veil, Parchment Grain, Slate Veil — oriented fibers and surface roughness with deeper tints that cut glare
+  - *Fiber-forward* — Gesso Ground, Linen Veil, Parchment Grain, Slate Veil — oriented fiber strands and surface roughness with deeper tints that cut glare
 - **Searchable paper library** — search names, descriptions, IDs, and material terms, including repeated whitespace, accents, and terms in any order; filter by light, dark, or custom papers. Switching views resizes the menu to fit its content
 - **Paper Mill with live screen preview** — tune tint, wash, weave, and blotch against your actual desktop before creating or saving the paper
 - **Comfort guidance** — see tint-wash contrast retention, estimated luminance and blue-channel reduction, tint temperature, pattern load, and four starting recipes: Focus, Reading, Paper, and Night. Estimates exclude the separate Matte finish control.
@@ -52,12 +52,14 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 - **In-app updates** — Deckle checks GitHub Releases daily and installs automatically from writable app locations; otherwise it explains the blocker and offers the release page
 - **Per-app rules** — hide the paper in chosen apps ("Except…") or show it only in chosen apps ("Only…")
 - **Automation** — `deckle://` URL commands work from Shortcuts, Raycast, Alfred, cron, or Terminal
-- **Capture privacy** — optionally hide the texture from screenshots and screen recordings while it stays visible to you
+- **Capture privacy** — optionally hide the texture from macOS screenshots and recordings while it stays visible to you. macOS provides no guaranteed opt-out, so some screen-sharing and recording apps may still capture it
 - **Snooze** for 15 min, 30 min, 1 hour, or 2 hours, then resume automatically
 - **Multi-monitor support** with per-display inclusion
 - **Launch at login**
 - **Click-through and lightweight** — the texture is one small tiled image; Deckle uses approximately 0% CPU at rest
 - **Menu-bar first** — no Dock icon or app-switcher entry; Paper Mill and Community Papers open only when requested
+- **Accessible** — VoiceOver labels, values, and selected states across the menu, controls, and Paper Mill; interface animations respect Reduce Motion
+- **Settings you can't lose** — if a paper can't be read (for example after moving between Deckle versions), the rest still load and the original data is kept and restored once readable
 
 <p align="center"><img src="docs/studio-library.png" width="370" alt="Rendered Deckle paper library with material swatches, categories, and import actions"></p>
 <p align="center"><sub>The studio images above are native SwiftUI review renders with isolated sample settings.</sub></p>
@@ -99,7 +101,7 @@ Or `make run` to try it from `dist/` without installing. Look for the paper-shee
 ## How it works
 
 - Deckle owns one borderless, transparent `NSWindow` per display at `.screenSaver` level. Each window ignores mouse events, joins every Space, and tiles one small paper image through Core Animation, so memory does not grow with display resolution.
-- Built-in and newly created papers use the deterministic **spectral+ (v3) renderer**: a random-phase, Hermitian-symmetric frequency field is synthesized with Accelerate/vDSP, inverse transformed into seamless grain, then layered with woven fibers, oriented Gabor-modulated fiber bundles that darken (absorbing light like real paper fibers), and Perlin surface roughness for a deeper, matte feel. The separate Matte finish pass adjusts the final tint wash; older custom papers retain their stored spectral or legacy engine for byte-compatible grain output.
+- Built-in and newly created papers use the deterministic **spectral fiber (v4) renderer**: a random-phase, Hermitian-symmetric frequency field is synthesized with Accelerate/vDSP, inverse transformed into seamless grain, then layered with woven fibers, tapered fiber strands whose fine fibrils follow the fiber angle and only darken (absorbing light like real paper fibers), and Perlin surface roughness for a deeper, matte feel. The separate Matte finish pass adjusts the final tint wash; older custom papers retain their stored v3, spectral or legacy engine for byte-compatible grain output. Duplicating a built-in in Paper Mill copies its full recipe, so the copy looks identical until you edit it.
 - The resulting 256×256-point tile contains both the tint wash and grain. The intensity control changes only the overlay window's `alphaValue`; identical render inputs reuse bounded caches.
 - Desk setups persist alongside settings in UserDefaults. Bare-screen comparison is transient and ends when the menu closes.
 - Paper Mill previews an unsaved draft through the same overlay windows used by saved papers. Preview state is transient, respects excluded displays, and is torn down when the editor closes or the draft is cancelled.

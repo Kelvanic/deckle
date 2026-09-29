@@ -16,9 +16,12 @@ import CoreGraphics
 ///   frequency spectrum and an inverse 2D FFT (`vDSP_fft2d_zip`), then layers
 ///   in a deterministic woven crosshatch, toroidally wrapped elongated fiber
 ///   splats, and sparse flecks. Existing built-in presets stay on this path.
-/// - `.spectralPlus` starts from the v2 spectrum and adds oriented,
-///   glare-reducing fiber bundles plus multi-octave surface roughness for new
-///   custom papers and advanced built-ins.
+/// - `.spectralPlus` (v3) starts from the v2 spectrum and adds darkening
+///   fiber bundles plus multi-octave surface roughness. Frozen for saved v3
+///   papers: its bundles are clipped patches striped across the fiber.
+/// - `.spectralFiber` (v4) keeps the v3 recipe but draws true strands that
+///   run along the fiber angle and taper at both ends. Built-ins and new
+///   custom papers use it.
 ///
 /// All engines map their [0, 1] field to translucent dark/light speckles the
 /// same way, and all composite over screen content like a paper sheet would.
@@ -120,7 +123,7 @@ enum TextureRenderer {
         switch preset.engineVersion {
         case .legacy:
             image = legacyTile(preset: preset, adjustments: adjustments, cached: cached)
-        case .spectral, .spectralPlus:
+        case .spectral, .spectralPlus, .spectralFiber:
             image = spectralTile(preset: preset, adjustments: adjustments, scale: scale, cached: cached)
         }
 
@@ -286,7 +289,7 @@ enum TextureRenderer {
         switch preset.engineVersion {
         case .legacy:
             key = "\(preset.grainSignature)|\(adjustments.fieldCacheKey)"
-        case .spectral, .spectralPlus:
+        case .spectral, .spectralPlus, .spectralFiber:
             key = "\(preset.grainSignature)|\(adjustments.fieldCacheKey)|bs\(backingFactor)"
         }
         if cached, let hit = fieldCache.get(key) {
@@ -302,7 +305,9 @@ enum TextureRenderer {
         case .spectral:
             value = spectralField(size: fieldSize * backingFactor, backingFactor: backingFactor, preset: preset, adjustments: adjustments)
         case .spectralPlus:
-            value = v3SpectralField(size: fieldSize * backingFactor, backingFactor: backingFactor, preset: preset, adjustments: adjustments)
+            value = fiberSpectralField(size: fieldSize * backingFactor, backingFactor: backingFactor, preset: preset, adjustments: adjustments, strands: false)
+        case .spectralFiber:
+            value = fiberSpectralField(size: fieldSize * backingFactor, backingFactor: backingFactor, preset: preset, adjustments: adjustments, strands: true)
         }
 
         if cached { fieldCache.set(key, value) }
@@ -378,12 +383,18 @@ enum TextureRenderer {
     /// Sums the preset's octaves of tileable value noise (plus optional weave
     /// modulation) into a [0, 1] field. Untouched since the original engine —
     /// this is the function the legacy SHA-256 fixture pins down.
+    ///
+    /// The original generator seeded from djb2(id). A version-less paper
+    /// decodes with exactly that value as its stored seed, so seeding from
+    /// `preset.seed` is byte-identical while keeping the grain stable when an
+    /// import assigns a fresh id — and matches the field cache key, which
+    /// covers the seed but not the id.
     private static func legacyFractalNoise(
         size: Int,
         preset: TexturePreset,
         adjustments: GrainAdjustments
     ) -> [Float] {
-        var rng = SplitMix64(seed: stableSeed(preset.id))
+        var rng = SplitMix64(seed: preset.seed)
         var out = [Float](repeating: 0, count: size * size)
         let totalWeight = preset.octaves.reduce(Float(0)) { $0 + $1.weight }
 
@@ -450,15 +461,6 @@ enum TextureRenderer {
             }
         }
         return out
-    }
-
-    /// djb2 hash — deterministic across launches, unlike Swift's hashValue.
-    private static func stableSeed(_ string: String) -> UInt64 {
-        var hash: UInt64 = 5381
-        for byte in string.utf8 {
-            hash = hash &* 33 &+ UInt64(byte)
-        }
-        return hash
     }
 
     // MARK: - Spectral engine (v2)
@@ -751,7 +753,17 @@ enum TextureRenderer {
         return base
     }
 
-    // MARK: - Spectral+ engine (v3)
+    /// Test seam: the uncached [0, 1] grain field exactly as the tile
+    /// renderer consumes it, row-major at the backing-pixel resolution.
+    static func grainField(
+        for preset: TexturePreset,
+        adjustments: GrainAdjustments = .none,
+        backingScale: CGFloat = 1
+    ) -> [Float] {
+        field(for: preset, adjustments: adjustments, scale: normalizedScale(backingScale), cached: false)
+    }
+
+    // MARK: - Spectral+ (v3) and spectral fiber (v4) engines
 
     /// Builds on the v2 spectral field by layering three physically
     /// motivated passes:
@@ -776,11 +788,17 @@ enum TextureRenderer {
     /// All three layers are synthesized at the target backing-pixel
     /// resolution (`size × size`) so Retina tiles get genuine detail,
     /// and the result is deterministically seeded from `preset.seed`.
-    private static func v3SpectralField(
+    ///
+    /// `strands` selects the v4 fiber pass (`stampFiberStrands`). When false
+    /// the original v3 bundle pass runs unchanged — its carrier varies along
+    /// the fiber, so it draws rungs across it, and its square stamp clips the
+    /// ends — because saved v3 papers must keep rendering byte-for-byte.
+    private static func fiberSpectralField(
         size: Int,
         backingFactor: Int,
         preset: TexturePreset,
-        adjustments: GrainAdjustments
+        adjustments: GrainAdjustments,
+        strands: Bool
     ) -> [Float] {
         let n = size
         let config = preset.v3Config ?? .default
@@ -795,7 +813,18 @@ enum TextureRenderer {
 
         // 2. Oriented fiber modulation
         let fiberStrength = max(0, min(1, config.fiberStrength))
-        if fiberStrength > 0.001 {
+        if fiberStrength > 0.001, strands {
+            var fiberRng = SplitMix64(seed: preset.seed &+ 0xA5B9_C4E3_D2F1_0678)
+            stampFiberStrands(
+                into: &base,
+                size: n,
+                angle: config.fiberAngle,
+                strength: fiberStrength,
+                scale: Float(adjustments.scale),
+                pixelScale: Float(backingFactor),
+                rng: &fiberRng
+            )
+        } else if fiberStrength > 0.001 {
             var fiberRng = SplitMix64(seed: preset.seed &+ 0xA5B9_C4E3_D2F1_0678)
             let angle = config.fiberAngle
             // Number of fiber bundles scales with strength.
@@ -870,6 +899,60 @@ enum TextureRenderer {
         }
 
         return base
+    }
+
+    /// v4 fiber strands. Each strand is a Gabor patch whose carrier varies
+    /// across the fiber, so its fine fibrils run parallel to `angle`. A
+    /// Gaussian cross-profile bounds its width and a raised-cosine taper
+    /// fades it to zero at both ends; the loop covers the strand's whole
+    /// rotated bounding box, so no edge is clipped. Like v3, strands only
+    /// darken the field. Wraps toroidally so the tile stays seamless.
+    private static func stampFiberStrands(
+        into field: inout [Float],
+        size n: Int,
+        angle: Float,
+        strength: Float,
+        scale: Float,
+        pixelScale: Float,
+        rng: inout SplitMix64
+    ) {
+        let nf = Float(n)
+        let grain = max(0.25, scale) * pixelScale
+        let count = max(1, Int((strength * 16).rounded()))
+        for _ in 0..<count {
+            let cx = Int(rng.unitFloat() * nf)
+            let cy = Int(rng.unitFloat() * nf)
+            let jitter = (rng.unitFloat() - 0.5) * 0.3
+            let dirX = cos(angle + jitter)
+            let dirY = sin(angle + jitter)
+            // Capped below the tile size so a strand never overlaps itself.
+            let halfLength = min(nf * 0.45, (24 + rng.unitFloat() * 48) * grain)
+            let width = (2 + rng.unitFloat() * 3) * grain
+            let halfWidth = 3 * width
+            let twoWidthSq = 2 * width * width
+            let fibrilK = 2 * Float.pi / max(2.5, (3 + rng.unitFloat() * 3) * grain)
+            let phase = rng.unitFloat() * 2 * Float.pi
+            let amplitude = strength * (0.25 + rng.unitFloat() * 0.30)
+
+            let extentX = Int((abs(dirX) * halfLength + abs(dirY) * halfWidth).rounded(.up))
+            let extentY = Int((abs(dirY) * halfLength + abs(dirX) * halfWidth).rounded(.up))
+            for dy in -extentY...extentY {
+                for dx in -extentX...extentX {
+                    let along = Float(dx) * dirX + Float(dy) * dirY
+                    let across = Float(dy) * dirX - Float(dx) * dirY
+                    guard abs(along) < halfLength, abs(across) < halfWidth else { continue }
+                    let taper = 0.5 + 0.5 * cos(Float.pi * along / halfLength)
+                    let profile = exp(-across * across / twoWidthSq)
+                    let fibrils = (cos(across * fibrilK + phase) + 1) * 0.5
+                    let darkening = amplitude * taper * profile * fibrils
+                    guard darkening > 0.0005 else { continue }
+                    let sx = ((cx + dx) % n + n) % n
+                    let sy = ((cy + dy) % n + n) % n
+                    let idx = sy * n + sx
+                    field[idx] = max(0, field[idx] - darkening)
+                }
+            }
+        }
     }
 
     /// Multi-octave tileable Perlin-style value noise for surface

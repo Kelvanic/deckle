@@ -5,7 +5,7 @@ VERSION  = $(shell /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString'
 
 # SIGN_IDENTITY: "-" = ad-hoc (local dev). For a distributable, notarizable
 # build pass your Developer ID, e.g.
-#   make dmg SIGN_IDENTITY="Developer ID Application: Akshat Katiyar (R6S9NTQA68)"
+#   make dmg SIGN_IDENTITY="Developer ID Application: Akshat Katiyar (B6H9852GJN)"
 SIGN_IDENTITY ?= -
 
 # NOTARY_PROFILE: name of the notarytool keychain profile created with

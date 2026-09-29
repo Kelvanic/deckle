@@ -246,7 +246,7 @@ Deckle uses a hybrid of tonal layering and restrained ambient shadows. Surfaces 
 
 ### Paper Library
 
-- **Compact mode:** horizontal carousel with a trailing fade and floating arrow only when at least three cards overflow.
+- **Entry:** the library opens from the "Paper library" tab or by searching; the home tab shows the hero and desk setups instead of a carousel.
 - **All Papers mode:** hide the hero and promo surfaces, show category chips, then a three-column vertical grid.
 - **Expanded viewport:** row-aware fixed height, capped at 236 points.
 - **Search viewport:** row-aware fixed height, capped at 360 points.

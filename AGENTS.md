@@ -33,8 +33,8 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 |---|---|---|
 | App entry and state | `DeckleApp.swift`, `AppState.swift` | MenuBarExtra, application lifecycle, persisted settings, transient preview state |
 | Overlay | `OverlayController.swift`, `OverlayWindow.swift` | One click-through retained-mode window per display |
-| Rendering | `TexturePreset.swift`, `TextureRenderer.swift` | Versioned texture recipes, spectral/legacy engines, bounded caches |
-| Main menu | `MenuView.swift`, `HeroCardView.swift`, `PresetCardView.swift`, `QuickControlsView.swift`, `FeaturePromoCard.swift` | Status, search, paper library, controls, discovery |
+| Rendering | `TexturePreset.swift`, `TextureRenderer.swift` | Versioned texture recipes, legacy/spectral/fiber engines, bounded caches |
+| Main menu | `MenuView.swift`, `HeroCardView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `QuickControlsView.swift`, `MenuPopover.swift` | Status, desk setups, search, paper library, controls, popover sizing |
 | Paper creation | `PaperMill.swift`, `PaperComfort.swift` | Custom paper editing, live preview, comfort estimates, import/export |
 | Community and updates | `CommunityBrowser.swift`, `UpdateManager.swift` | Community paper index, download/install, GitHub release updates |
 | Automation | `HotKey.swift`, `URLCommands.swift` | Global shortcut and `deckle://` commands |
@@ -62,11 +62,12 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 ### Renderer compatibility and performance
 
 - Renderer versions are a compatibility boundary:
-  - `.legacy` must remain byte-compatible for version-less historical custom papers.
+  - `.legacy` must remain byte-compatible for version-less historical custom papers. It seeds from the stored `seed` (which equals djb2 of the original id), never from the current id.
   - `.spectral` remains available for v2 custom papers and compatibility fixtures.
-  - `.spectralPlus` (v3) is used by all built-in presets and newly created papers; it layers darkening oriented-fiber bundles (Gabor-modulated) and Perlin surface roughness over the v2 spectrum.
+  - `.spectralPlus` (v3) must remain byte-compatible for saved v3 papers (pinned hash). Its fiber bundles are known to render as clipped patches striped across the fiber; do not fix them in place.
+  - `.spectralFiber` (v4, `TextureEngineVersion.current`) is used by all built-in presets and newly created papers; it keeps the v3 recipe but draws tapered strands whose fibrils run along `fiberAngle`.
 - Stable seeds must round-trip through JSON. Never use Swift `hashValue` for deterministic output.
-- Preserve Hermitian symmetry, inverse-FFT normalization, seamless wrapping, and backing-scale behavior in the spectral engine. The v3 pass builds on `spectralField` unchanged; it only darkens the resulting field, so it inherits these invariants.
+- Preserve Hermitian symmetry, inverse-FFT normalization, seamless wrapping, and backing-scale behavior in the spectral engine. The v3 and v4 fiber passes build on `spectralField` unchanged and only darken the resulting field, so they inherit these invariants.
 - Renderer caches are bounded LRUs and intentionally main-thread-only. Do not call them concurrently without redesigning synchronization.
 - Cache keys must include every render-relevant input and exclude irrelevant metadata such as a paper name.
 - Avoid uncached 2x spectral rendering directly in a parent SwiftUI body that observes unrelated state. Isolate expensive thumbnails in equatable child views, use 1x while dragging, and debounce full overlay pushes.
@@ -76,6 +77,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 
 - A draft is not saved until Create or Save is pressed.
 - `compose(from:)` must create a fresh ID and seed; cancelling a duplicated built-in must leave `customPapers` unchanged.
+- `CustomPaper(duplicating:)` must render pixel-identically to its built-in source until edited. Changing the tint releases the copied speckle colours and light/dark classification.
 - Live preview must render through the production overlay pipeline, not a separate approximation.
 - Clear `AppState.previewPaper` on every exit path: Stop Preview, Cancel, Save, Delete, programmatic close, and `windowWillClose`.
 - Paper Mill window state and the menu's Open/Close label must agree even when the window is miniaturized.
