@@ -327,6 +327,23 @@ final class TextureRendererTests: XCTestCase {
         XCTAssertEqual(afterLastReplay.tileMisses, beforeLastReplay.tileMisses)
     }
 
+    func testBrowsingTheLibraryKeepsRendererCachesSmall() {
+        // What an open menu renders: the 2x overlay, then every library
+        // swatch exactly as PaperSample requests it.
+        _ = TextureRenderer.compositeTile(for: TexturePreset.all[0], backingScale: 2)
+        for preset in TexturePreset.all {
+            if preset.isQuietReading {
+                _ = TextureRenderer.compositeTile(for: preset, backingScale: 1)
+            } else {
+                _ = TextureRenderer.preview(for: preset, size: CGSize(width: 92, height: 52))
+            }
+        }
+
+        // The overlay's working set plus small swatches. Keeping a 1 MB field
+        // and tile for every paper browsed held about 37 MB here.
+        XCTAssertLessThan(TextureRenderer.cachedByteCount, 8 * 1_048_576)
+    }
+
     // MARK: - Spectral+ (v3) engine
 
     /// v3 preset with a tiny tile so tests are fast.
