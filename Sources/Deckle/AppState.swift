@@ -117,6 +117,38 @@ final class AppState: ObservableObject {
     /// Comparison never changes saved settings or a running snooze.
     @Published var isComparingOriginal = false
 
+    // MARK: Pets
+
+    /// Desktop companions are opt-in and independent of the paper overlay.
+    @Published var petsEnabled: Bool {
+        didSet { defaults.set(petsEnabled, forKey: Keys.petsEnabled) }
+    }
+
+    @Published var petKind: PetKind {
+        didSet { defaults.set(petKind.rawValue, forKey: Keys.petKind) }
+    }
+
+    @Published var petMood: PetMood {
+        didSet { defaults.set(petMood.rawValue, forKey: Keys.petMood) }
+    }
+
+    @Published var petSize: PetSize {
+        didSet { defaults.set(petSize.rawValue, forKey: Keys.petSize) }
+    }
+
+    /// nil means "main display" — follow the first eligible screen.
+    @Published var petDisplayID: String? {
+        didSet { defaults.set(petDisplayID, forKey: Keys.petDisplay) }
+    }
+
+    /// Pet visibility follows its own enabled flag plus the same app rules
+    /// and display exclusions as the paper. Snooze, comparison, and Paper
+    /// Mill previews never affect it.
+    func petsAreVisible(on displayID: String, frontmost bundleID: String?) -> Bool {
+        petsEnabled && !excludedDisplays.contains(displayID)
+            && appRuleAllows(frontmost: bundleID)
+    }
+
     @Published var deskSetups: [DeskSetup] {
         didSet {
             if let data = try? JSONEncoder().encode(deskSetups) {
@@ -210,6 +242,11 @@ final class AppState: ObservableObject {
         static let ruleApps = "ruleApps"
         static let customPapers = "customPapers"
         static let deskSetups = "deskSetups"
+        static let petsEnabled = "petsEnabled"
+        static let petKind = "petKind"
+        static let petMood = "petMood"
+        static let petSize = "petSize"
+        static let petDisplay = "petDisplayID"
     }
 
     private let defaults: UserDefaults
@@ -227,6 +264,11 @@ final class AppState: ObservableObject {
         matteStrength = defaults.object(forKey: Keys.matteStrength) as? Double ?? 0.0
         appRuleMode = AppRuleMode(rawValue: defaults.string(forKey: Keys.appRuleMode) ?? "") ?? .everywhere
         ruleApps = Self.loadList(RuleApp.self, key: Keys.ruleApps, defaults: defaults) ?? []
+        petKind = PetKind(rawValue: defaults.string(forKey: Keys.petKind) ?? "") ?? .cat
+        petMood = PetMood(rawValue: defaults.string(forKey: Keys.petMood) ?? "") ?? .sleepy
+        petSize = PetSize(rawValue: defaults.string(forKey: Keys.petSize) ?? "") ?? .medium
+        petsEnabled = defaults.bool(forKey: Keys.petsEnabled)
+        petDisplayID = defaults.string(forKey: Keys.petDisplay)
         customPapers = Self.loadCustomPapers(defaults: defaults)
         deskSetups = Self.loadList(DeskSetup.self, key: Keys.deskSetups, defaults: defaults)
             .map { Array($0.filter(\.hasValidSettings).prefix(8)) } ?? DeskSetup.starters

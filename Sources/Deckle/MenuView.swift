@@ -1,18 +1,28 @@
 import SwiftUI
 import AppKit
 
-/// A paper-first desk, a searchable library, and a separate controls surface.
+/// A paper-first desk, a searchable library, pets, and a controls surface.
+/// One mode at a time — desk, library, pets, or controls replace content.
 struct MenuView: View {
+    enum Mode: String {
+        case desk, library, pets
+    }
+
     @EnvironmentObject private var state: AppState
     @ObservedObject private var updater = UpdateManager.shared
     @State private var searchText = ""
     @State private var isShowingAllPapers = false
+    @State private var mode: Mode
     @ObservedObject private var mill = PaperMill.shared
     @State private var isDetailsExpanded = false
     @State private var selectedControlTab: QuickControlsView.ControlTab = .grain
     @State private var dismissedUpdateVersion: String?
     @FocusState private var isSearchFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(initialMode: Mode = .desk) {
+        _mode = State(initialValue: initialMode)
+    }
 
     var body: some View {
         MenuPopover(preferredWidth: 370, onHide: { state.isComparingOriginal = false }) {
@@ -24,15 +34,23 @@ struct MenuView: View {
         VStack(spacing: 12) {
             topHeaderBar
             HStack(spacing: 0) {
-                studioTab("Your desk", selected: !isLibraryFocused && !isDetailsExpanded) {
+                studioTab("Your desk", selected: mode == .desk && !isDetailsExpanded) {
                     state.isComparingOriginal = false
                     searchText = ""
                     isShowingAllPapers = false
+                    mode = .desk
                     isDetailsExpanded = false
                 }
-                studioTab("Paper library", selected: isLibraryFocused && !isDetailsExpanded) {
+                studioTab("Library", selected: mode == .library && !isDetailsExpanded) {
                     state.isComparingOriginal = false
                     isShowingAllPapers = true
+                    mode = .library
+                    isDetailsExpanded = false
+                }
+                studioTab("Pets", selected: mode == .pets && !isDetailsExpanded) {
+                    state.isComparingOriginal = false
+                    searchText = ""
+                    mode = .pets
                     isDetailsExpanded = false
                 }
             }
@@ -50,6 +68,8 @@ struct MenuView: View {
 
             if isDetailsExpanded {
                 QuickControlsView(isExpanded: $isDetailsExpanded, selectedTab: $selectedControlTab)
+            } else if mode == .pets {
+                PetsView()
             } else if isLibraryFocused {
                 searchBar
                 PresetCollectionView(
@@ -144,7 +164,7 @@ struct MenuView: View {
     }
 
     private var isLibraryFocused: Bool {
-        isSearching || isShowingAllPapers
+        mode == .library || isSearching || isShowingAllPapers
     }
 
     // MARK: - 2. Search Bar

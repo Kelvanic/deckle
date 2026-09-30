@@ -153,7 +153,7 @@ Deckle rejects ornamental glassmorphism, neon utility palettes, oversized market
 - One focused mode at a time instead of stacking every section vertically
 - Fast, interruptible transitions
 
-**The One Mode Rule.** The menu shows exactly one of *Your desk*, *Paper library*, or *Controls and settings*. Searching and browsing live in Paper library; opening the controls replaces the current content rather than stacking a drawer over it.
+**The One Mode Rule.** The menu shows exactly one of *Your desk*, *Library*, *Pets*, or *Controls and settings*. Searching and browsing live in Library; opening the controls replaces the current content rather than stacking a drawer over it.
 
 **The Honest Material Rule.** The popover background is `windowBackgroundColor` at 96% opacity. Content surfaces inside it are opaque or strongly tonal. Empty translucent regions below the footer are a sizing bug.
 
@@ -213,6 +213,8 @@ Surfaces are separated by system background roles and low-opacity hairlines, not
 - The Update capsule: system accent at 30%, 3-point radius, 1-point offset.
 - The update banner: system accent at 8%, 6-point radius, 2-point offset.
 
+Pet artwork carries its own paper shadows (see Pets). They are part of the illustration, not interface elevation.
+
 ## Components
 
 ### Popover shell
@@ -220,7 +222,7 @@ Surfaces are separated by system background roles and low-opacity hairlines, not
 - **Width:** fixed at 370 points; **padding:** 14 points; **section spacing:** 14 points.
 - **Sizing:** `MenuPopover` measures the content and resizes the native MenuBarExtra window to fit it, keeping the top edge anchored and clamping to the screen's visible frame. Content taller than the visible frame scrolls.
 - **Header:** the serif wordmark and 10-point tagline "A softer place to work.", a bordered small **Paper Mill** / **Close Mill** button with a scissors icon, and a 28-point controls button (sliders icon, or an xmark on a 10% rust fill while controls are open) with a 5-point rust dot when an update is available.
-- **Mode tabs:** "Your desk" and "Paper library" as two equal-width buttons in a 3-point-padded track (primary at 4.5%, 8-point radius). The selected tab has a control-background fill, 6-point radius, and semibold text.
+- **Mode tabs:** "Your desk", "Library", and "Pets" as three equal-width buttons in a 3-point-padded track (primary at 4.5%, 8-point radius). The selected tab has a control-background fill, 6-point radius, and semibold text.
 - **Footer:** the ⌥⌘P badge with "toggles anywhere" (or "unavailable" if registration failed), a GitHub link, and Quit.
 
 ### Your desk
@@ -251,6 +253,14 @@ Surfaces are separated by system background roles and low-opacity hairlines, not
 - **Text:** one-line semibold name and one-line tag (Custom, No grain, Quiet reading, Dark paper, Woven, or the start of the subtitle).
 - **Context menu:** custom papers offer Edit in Paper Mill…, Export Paper…, and Delete; built-ins offer Duplicate in Paper Mill….
 
+### Pets
+
+- **Hero:** one card built like the desk hero (20-point radius, 7% hairline). A sage (cat) or sky (fish) stage carries the mono "DESKTOP PETS" eyebrow and a one-line rounded-bold title over a 118-point paper diorama: a torn paper floor for Miso, two folded-paper wave strips for Tide. The same retained-layer rig the desktop uses wanders there with the desktop's own motion math, animating only while the menu is visible. A panel-colored status strip below shows a green dot and "Miso is on your desk" (or "…is waiting in the menu"), with the mood and size in mono caps on the right.
+- **Companion cards:** two side-by-side cards with a portrait on the pet's tonal background (Miso sitting, Tide mid-glide), framed to the drawn pose rather than the travel canvas, plus name and species. Selection = 2-point rust border plus a rust check badge — never color alone.
+- **Controls card:** Mood and Size segmented pickers, a Display menu picker (Main display plus each included screen), the prominent **Bring… / Hide…** action, and a plain-language note that pets are click-through, need no permissions, and honor display/app rules. A quiet line ("Resting in place — Reduce Motion is on.") names the reason motion is paused under Reduce Motion or Low Power Mode.
+- **Artwork:** jointed paper-cut puppets on a 160 × 120 canvas. Every piece is a flat cut shape over a crisp under-shadow 1.3 points below it (warm umber at 30% for Miso, deep navy at 30% for Tide), so overlaps read as stacked paper. Details (tabby stripes, scales, belly panels, bib) are clipped to their silhouettes. Miso is a ginger tabby (#EA9B57, stripes #C66E36, cream #FAECD5) in three-quarter view, jointed at hip, waist, neck, ears, and a two-part tail. The haunch is cut as its own piece, so its curve reads as the thigh in every posture. Tide is a blue fish (#3479AA over a pale #E5F3F5 belly) with pleated coral fans (#EE815E / #F9B492) for tail, dorsal, and fins. Soft shadows are drawn from fixed paths: a contact shadow under Miso and a hover shadow under Tide, as if the paper floats just above the screen.
+- Pets are opt-in (off by default), independent of the paper's enabled/snooze state, and never appear on excluded displays or under blocking app rules.
+
 ### Controls and settings
 
 - **Container:** 12-point padding, 16-point radius, primary at 3% with a 5% hairline. Its inner content card has 14-point padding and a 14-point radius on control background at 90%.
@@ -277,6 +287,16 @@ Surfaces are separated by system background roles and low-opacity hairlines, not
 - Overlay show and hide: 0.4 s opacity fade.
 - Mode and library size changes are not animated, so the native window resizes directly to its final size.
 - With Reduce Motion on, interface animations are removed; the overlay's opacity fade remains.
+- Desktop pets and their in-menu stage preview settle to a still pose under Reduce Motion and Low Power Mode, and stop entirely while pets are off, hidden, or the display sleeps. A paused pet is grounded and calm, never frozen mid-leap or mid-stride.
+- Pet motion is deterministic, with no teleports:
+  - Behavior comes from seeded plans, so it feels unscripted.
+  - Miso's habits are sit, look back, groom, stretch, knead and nap, pounce, tail chase, and zoomies.
+  - Tide's tricks are dart, loop-de-loop, nibble, doze, and barrel roll.
+  - Mood changes how often each one appears.
+  - Postures (sit, lie, stretch, crouch, leap, look back, groom, knead, gallop) blend over about 0.9 s.
+  - Turns flip the cut-out edge-on like a card: 0.45 s for Miso, 0.6 s for Tide.
+  - Miso's gait is locked to the distance walked, so paws plant instead of skating.
+  - Tail and fin clocks run at a constant rate, so motion stays calm at any uptime.
 
 ## Accessibility
 

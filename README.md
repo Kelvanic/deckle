@@ -37,7 +37,12 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 - **Compare original** — temporarily see your bare screen without changing saved settings or a snooze. It ends when you choose Back to paper, pick another paper, switch tabs, or close the menu.
 - **A living dotted companion** — Echo's six counter-rotating rings breathe around a pulsing core, with blinking eyes that follow the cursor and a spring squash on click. The native animation uses the geometry and motion parameters from the [Cloudstudio reference](https://cloudstudio.es/). It pauses when the menu is hidden or Reduce Motion is enabled; the desktop overlay stays static.
 - **A complete paper studio** — the library has a swatch-gallery layout; all five controls tabs fit at once; Paper Mill groups draft controls with a pinned Save/Cancel bar; Community Papers has readable recipe cards and dedicated empty/offline states. Illustrated headers fan gently on hover and respect Reduce Motion.
-- **A paper-first workspace** — *Your desk* shows the Echo companion, a labelled paper sample, intensity and matte controls, and your setups; *Paper library* provides browsing and search; *Controls and settings* replaces the menu content with grain, snooze, display, app-rule, and app settings.
+- **Paper-cut desktop pets** — an opt-in companion layer with its own menu tab. Pets never follow a fixed loop: each draws a fresh seeded plan about once a minute.
+  - *Miso* is a jointed ginger tabby that wanders the bottom of the screen. It sits up to watch your cursor, looks back over its shoulder, grooms a raised paw, stretches with a yawn, and kneads before napping in a loaf with drifting z's. When playful it also pounces, chases its tail, and gets the zoomies.
+  - *Tide* is a blue paper fish with pleated fins that drifts through the screen in slow loops. It darts and glides, loops the loop, stops to nibble, dozes as it sinks, barrel-rolls, and turns edge-on like a folded card.
+
+  Choose a Sleepy, Curious, or Playful mood (which shifts how often each behavior appears), a size, and a display. Pets are always click-through, need no permissions, honor your display exclusions and app rules, settle into a calm still pose under Reduce Motion or Low Power Mode, and hide while the display sleeps. The paper texture stays fully static — pets animate in their own small window, so enabling a companion never turns the overlay into a per-frame renderer.
+- **A paper-first workspace** — *Your desk* shows the Echo companion, a labelled paper sample, intensity and matte controls, and your setups; *Paper library* provides browsing and search; *Pets* manages the companions; *Controls and settings* replaces the menu content with grain, snooze, display, app-rule, and app settings.
 - **26 built-in papers**, grouped in the source as:
   - *Quiet reading* — Clear Veil (no grain), Book Cream, Quiet Gray, Evening Shade
   - *Papers* — Soft Wove, Rice Paper, Laid Cotton, Newsprint, Cold Press, Artist Canvas
@@ -60,13 +65,24 @@ Not a calibrated blue-light filter — a *matte texture* overlay. Choose a smoot
 - **Snooze** for 15 min, 30 min, 1 hour, or 2 hours, then resume automatically. Quitting Deckle ends a snooze.
 - **Multi-monitor support** — one overlay per display; include or exclude each display under Controls → Displays
 - **Launch at login** — available in the bundled app
-- **Click-through and lightweight** — each display tiles one small texture image, so memory does not grow with resolution, and nothing is redrawn per frame. A paused overlay does no rendering at all.
+- **Click-through and lightweight** — each display tiles one small texture image, so memory does not grow with resolution, and nothing is redrawn per frame. A paused overlay does no rendering at all. A pet is one small window: a retained layer tree posed by one coalesced timer, stopped entirely while pets are off, hidden, or the display sleeps.
 - **Menu-bar first** — no Dock icon or app-switcher entry; Paper Mill and Community Papers open only when requested
 - **Accessible** — VoiceOver labels, values, and selected states across the menu, controls, and Paper Mill, including the menu bar icon ("Deckle, paper on/off"); interface animations respect Reduce Motion
 - **Settings you can't lose** — if a stored paper, setup, or app rule can't be read (for example after moving between Deckle versions), the rest still load and the original data is kept; papers are restored once a later launch can read them
 
 <p align="center"><img src="docs/studio-library.png" width="370" alt="Rendered Deckle paper library with category filters and material swatches"></p>
-<p align="center"><sub>The desk, library, and Paper Mill images are native SwiftUI renders of the current views with isolated sample settings, not screenshots of a running menu.</sub></p>
+
+<table>
+  <tr>
+    <td width="46%" align="center"><img src="docs/studio-pets.png" alt="Pets tab with a sage paper stage where Miso the ginger tabby sits on a torn-paper floor, companion cards for Miso and Tide, and mood, size, and display controls" width="360"></td>
+    <td width="54%" align="center"><img src="docs/pets-cat-motion.gif" alt="Miso sprints across a torn-paper floor, sits, and looks back over its shoulder" width="420"><br><img src="docs/pets-fish-motion.gif" alt="Tide the paper fish loops the loop and glides on with pleated fins" width="420"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>A little life on your desk.</strong><br><sub>Opt-in paper companions with a mood, a size, and a display.</sub></td>
+    <td align="center"><strong>Paper puppets, not sprites.</strong><br><sub>Jointed cut-paper layers with seeded, never-repeating habits.</sub></td>
+  </tr>
+</table>
+<p align="center"><sub>The desk, library, Paper Mill, and Pets images are native renders of the current views with isolated sample settings, not screenshots of a running menu.</sub></p>
 
 <table>
   <tr>
