@@ -65,7 +65,11 @@ final class EchoBallTests: XCTestCase {
         XCTAssertFalse(view.isAnimating)
         view.reducedMotion = false
         XCTAssertTrue(view.isAnimating)
-        try await Task.sleep(nanoseconds: 80_000_000)
+        // Wait for a real tick rather than assuming one lands within a fixed
+        // sleep — shared CI runners can stall the main run loop for a while.
+        for _ in 0..<40 where view.motion.phase == 0 {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
         XCTAssertGreaterThan(view.motion.phase, 0)
         view.reducedMotion = true
         XCTAssertFalse(view.isAnimating)
