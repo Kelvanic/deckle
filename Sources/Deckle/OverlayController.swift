@@ -41,7 +41,7 @@ final class OverlayController {
             queue: .main
         ) { [weak self] _ in
             // Observer blocks are not actor-isolated; hop explicitly.
-            Task { @MainActor in self?.refresh() }
+            Task { @MainActor [weak self] in self?.refresh() }
         }
 
         // Event-driven per-app rules: no polling, we only hear about
@@ -55,7 +55,7 @@ final class OverlayController {
         ) { [weak self] note in
             let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             let bundleID = app?.bundleIdentifier
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.frontmostBundleID = bundleID
                 self?.refresh()
             }

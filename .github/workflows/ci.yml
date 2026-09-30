@@ -1,0 +1,32 @@
+name: CI
+
+# Runs the release workflow's verification on the release toolchain, so code
+# the Xcode 15 compiler rejects is caught in review instead of at tag time.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-14
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Test on the release toolchain
+        run: |
+          plutil -lint Support/Info.plist
+          swift test
+
+      - name: Universal release build
+        run: make build UNIVERSAL=1

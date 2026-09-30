@@ -177,7 +177,7 @@ final class PetController {
     private func observe(_ center: NotificationCenter, _ name: Notification.Name,
                          _ handler: @escaping @MainActor (PetController, Notification) -> Void) {
         let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, self.started else { return }
                 handler(self, note)
             }
@@ -272,7 +272,7 @@ final class PetController {
         if shouldRun && timer == nil {
             lastTick = ProcessInfo.processInfo.systemUptime
             let tick = Timer(timeInterval: 1 / 30, repeats: true) { [weak self] _ in
-                Task { @MainActor in self?.advanceFrame() }
+                Task { @MainActor [weak self] in self?.advanceFrame() }
             }
             tick.tolerance = 1 / 120
             timer = tick

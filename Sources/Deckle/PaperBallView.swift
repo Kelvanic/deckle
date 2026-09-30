@@ -138,7 +138,7 @@ final class EchoBallView: NSView {
         stop()
         guard let window else { return }
         visibilityObservation = window.observe(\.isVisible, options: [.new]) { [weak self] _, _ in
-            Task { @MainActor in self?.synchronizeAnimation() }
+            Task { @MainActor [weak self] in self?.synchronizeAnimation() }
         }
         let center = NotificationCenter.default
         for notification in [NSWindow.didChangeOcclusionStateNotification,
@@ -176,7 +176,7 @@ final class EchoBallView: NSView {
         previousMouseMovedSetting = window?.acceptsMouseMovedEvents
         window?.acceptsMouseMovedEvents = true
         let tick = Timer(timeInterval: 1 / 60, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.advanceFrame() }
+            Task { @MainActor [weak self] in self?.advanceFrame() }
         }
         tick.tolerance = 1 / 240
         timer = tick
@@ -185,7 +185,7 @@ final class EchoBallView: NSView {
             // Stored callbacks are not actor-isolated under the release compiler.
             let location = event.locationInWindow
             let eventWindow = event.window
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, self.window === eventWindow else { return }
                 self.pointer = self.convert(location, from: nil)
             }
