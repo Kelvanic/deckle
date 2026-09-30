@@ -77,7 +77,7 @@ final class PetStageView: NSView {
         // Same gate as Echo: window visibility, not occlusion — Deckle's own
         // screen-saver-level windows can mark the menu occluded.
         visibilityObservation = window.observe(\.isVisible, options: [.new]) { [weak self] _, _ in
-            Task { @MainActor in self?.synchronize() }
+            Task { @MainActor [weak self] in self?.synchronize() }
         }
         let center = NotificationCenter.default
         for name in [NSWindow.didBecomeKeyNotification, NSWindow.didMiniaturizeNotification,
@@ -85,7 +85,7 @@ final class PetStageView: NSView {
             windowObservers.append(center.addObserver(
                 forName: name, object: window, queue: .main
             ) { [weak self] _ in
-                Task { @MainActor in self?.synchronize() }
+                Task { @MainActor [weak self] in self?.synchronize() }
             })
         }
         synchronize()
@@ -122,7 +122,7 @@ final class PetStageView: NSView {
         guard timer == nil else { return }
         lastTick = ProcessInfo.processInfo.systemUptime
         let tick = Timer(timeInterval: 1 / 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.advance() }
+            Task { @MainActor [weak self] in self?.advance() }
         }
         tick.tolerance = 1 / 120
         timer = tick

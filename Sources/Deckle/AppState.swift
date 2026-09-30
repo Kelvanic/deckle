@@ -348,7 +348,7 @@ final class AppState: ObservableObject {
             repeats: false
         ) { [weak self] _ in
             // Timer blocks are not actor-isolated; hop explicitly.
-            Task { @MainActor in self?.snoozeUntil = nil }
+            Task { @MainActor [weak self] in self?.snoozeUntil = nil }
         }
         // A snooze ending seconds late is invisible; a coalesced CPU wakeup
         // is real battery savings.

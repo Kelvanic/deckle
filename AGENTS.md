@@ -27,6 +27,8 @@ make dmg                            # Local DMG
 
 Before shipping a code change, run `swift test`. For release-sensitive changes, also run `make build UNIVERSAL=1`: the release workflow uses Xcode 15.4 and builds both architectures, which can expose actor-isolation errors that a local single-architecture build misses.
 
+`.github/workflows/ci.yml` runs the same checks on Xcode 15.4 for every PR and push to `main`; a newer local toolchain can accept code it rejects. A common case: inside a `[weak self]` callback, give the hop its own capture — `Task { @MainActor [weak self] in self?.work() }` — because Xcode 15 rejects `self?` from the outer closure as a captured `var`.
+
 ## Source map
 
 | Area | Files | Responsibility |
