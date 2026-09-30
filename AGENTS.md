@@ -34,7 +34,8 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 | App entry and state | `DeckleApp.swift`, `AppState.swift`, `DeskSetup.swift` | MenuBarExtra, application lifecycle, persisted settings and desk setups, tolerant loading, transient preview state |
 | Overlay | `OverlayController.swift`, `OverlayWindow.swift` | One click-through retained-mode window per display |
 | Rendering | `TexturePreset.swift`, `TextureRenderer.swift` | Versioned texture recipes, legacy/spectral/fiber engines, bounded caches |
-| Main menu | `MenuView.swift`, `HeroCardView.swift`, `PaperBallView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `PaperSearch.swift`, `QuickControlsView.swift`, `MenuPopover.swift`, `MenuDismiss.swift`, `StudioStyle.swift` | Status, desk setups, search, paper library, controls, popover sizing and dismissal, Echo companion animation, shared palette, paper samples, and studio controls |
+| Main menu | `MenuView.swift`, `HeroCardView.swift`, `PaperBallView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `PaperSearch.swift`, `QuickControlsView.swift`, `MenuPopover.swift`, `MenuDismiss.swift`, `StudioStyle.swift`, `PetsView.swift` | Status, desk setups, search, paper library, pets panel, controls, popover sizing and dismissal, Echo companion animation, shared palette, paper samples, and studio controls |
+| Pets | `Pet.swift`, `PetArtwork.swift`, `PetController.swift` | Pet kind/mood/size/display state, deterministic motion cycles, layered paper-cut artwork, and the single small click-through pet window |
 | Paper creation | `PaperMill.swift`, `PaperComfort.swift` | Custom paper editing, live preview, comfort estimates, import/export |
 | Community and updates | `CommunityBrowser.swift`, `UpdateManager.swift` | Community paper index, download/install, GitHub release updates |
 | Automation | `HotKey.swift`, `URLCommands.swift` | Global shortcut and `deckle://` commands |
@@ -58,6 +59,17 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - Per-display exclusions always win, including during Paper Mill preview.
 - A Paper Mill preview may override enabled, snoozed, and app-rule visibility so an unsaved paper can be judged on screen.
 - Do not allocate display-sized texture bitmaps. `TextureView` must continue using a small tiled layer pattern.
+- Pets live in one small `PetWindow`, not the overlay. They share the same click-through/Spaces/level contract, honor `excludedDisplays`, `appRuleAllows`, and `hideFromCapture`, are opt-in (default off), and never appear because a paper or preview is showing.
+- `PetMotion` is a pure deterministic function of kind, mood, time, bounds, and cursor. Behavior looks random but comes from seeded plans (`PetDice`, splitmix64), indexed directly by time:
+  - Each fixed-length cat plan starts where the previous one ended, sitting.
+  - Fish tricks bend path time with warps that integrate to zero.
+  - Postures, facing, and position join continuously.
+  - Do not add wall-clock reads, system randomness, or `hashValue`.
+- Pet animation is one ~30 Hz timer updating retained layer transforms and a small window frame. Stop it when pets are off/hidden, the display sleeps, or the session is inactive; under Reduce Motion or Low Power Mode the pet stays visible but settles into a grounded still pose. Do not render textures or rebuild artwork per frame.
+- Every pet layer is canvas-sized with an explicit pivot, so all paths share one canvas space and anchor rotations work.
+- `PetRig` never writes the host-owned `root` transform; hosts size it with `place(in:)`. Overlays (sleep z's, bubbles) live unflipped in root space.
+- No pose may draw outside the 160 × 120 canvas; `PetArtworkTests` sweeps every mood to enforce it.
+- Keep posture arithmetic in short typed terms (`weigh`). The Xcode 15 release compiler can time out on long literal `CGFloat` expressions.
 
 ### Renderer compatibility and performance
 

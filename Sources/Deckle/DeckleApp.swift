@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // development.
         NSApp.setActivationPolicy(.accessory)
         OverlayController.shared.start()
+        PetController.shared.start()
         HotKey.register()
         UpdateManager.shared.start()
     }
