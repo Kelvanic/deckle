@@ -6,7 +6,7 @@
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
 ![Universal](https://img.shields.io/badge/universal-Apple%20Silicon%20%2B%20Intel-555)
 
-**[projects.akshatkatiyar.com/projects/deckle](https://projects.akshatkatiyar.com/projects/deckle/)**
+**[kelvanic.com/products/deckle](https://kelvanic.com/products/deckle/)**
 
 A free, open-source macOS menu bar app that lays a subtle **paper-grain texture over your entire screen**, making long reading and writing sessions feel more like paper than glass. Choose a paper, tune your desk, and save the whole setup for your next reading or writing session.
 
