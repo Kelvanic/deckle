@@ -402,7 +402,7 @@ struct MenuView: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    Link("★ GitHub", destination: URL(string: "https://github.com/YellowFoxH4XOR/deckle")!)
+                    Link("★ GitHub", destination: URL(string: "https://github.com/Kelvanic/deckle")!)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
 

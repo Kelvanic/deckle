@@ -8,7 +8,7 @@ final class UpdateManagerTests: XCTestCase {
     private let translocatedPath = "/private/var/folders/zz/zy/AppTranslocation/"
         + "D7C484A9-5915-4468-B6E9-11959001A111/d/Deckle.app"
     private let pinnedDownload =
-        "https://github.com/YellowFoxH4XOR/deckle/releases/download/v1.7.3/Deckle-1.7.3.dmg"
+        "https://github.com/Kelvanic/deckle/releases/download/v1.7.3/Deckle-1.7.3.dmg"
 
     // MARK: - Bundle classification
 
