@@ -1,7 +1,7 @@
 # Deckle
 
-[![Latest release](https://img.shields.io/github/v/release/YellowFoxH4XOR/deckle?label=release&color=B34A22)](https://github.com/YellowFoxH4XOR/deckle/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/YellowFoxH4XOR/deckle/total?color=191713)](https://github.com/YellowFoxH4XOR/deckle/releases)
+[![Latest release](https://img.shields.io/github/v/release/Kelvanic/deckle?label=release&color=B34A22)](https://github.com/Kelvanic/deckle/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Kelvanic/deckle/total?color=191713)](https://github.com/Kelvanic/deckle/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
 ![Universal](https://img.shields.io/badge/universal-Apple%20Silicon%20%2B%20Intel-555)
@@ -12,7 +12,7 @@ A free, open-source macOS menu bar app that lays a subtle **paper-grain texture 
 
 ![Deckle toggling its paper texture over a web page](docs/deckle-demo.gif)
 
-> If Deckle makes your screen nicer, [a star](https://github.com/YellowFoxH4XOR/deckle) helps other people find it ⭐
+> If Deckle makes your screen nicer, [a star](https://github.com/Kelvanic/deckle) helps other people find it ⭐
 
 *A deckle is the wooden frame used in hand papermaking — it leaves behind the soft, feathered "deckle edge" that marks real handmade paper.*
 
@@ -115,14 +115,14 @@ The cask can lag behind the latest release; Deckle's in-app updater then offers 
 
 ### Download
 
-Grab the DMG from the [latest release](https://github.com/YellowFoxH4XOR/deckle/releases/latest), open it, and drag Deckle into Applications. Release builds are signed with a Developer ID and notarized by Apple, so they launch without a Gatekeeper warning. Each release also publishes a SHA-256 checksum file.
+Grab the DMG from the [latest release](https://github.com/Kelvanic/deckle/releases/latest), open it, and drag Deckle into Applications. Release builds are signed with a Developer ID and notarized by Apple, so they launch without a Gatekeeper warning. Each release also publishes a SHA-256 checksum file.
 
 ### Build from source
 
 Requires a Swift 5.9 or newer toolchain (Xcode 15 or later, or its command line tools) on macOS 13+:
 
 ```sh
-git clone https://github.com/YellowFoxH4XOR/deckle.git
+git clone https://github.com/Kelvanic/deckle.git
 cd deckle
 make install    # quits a running Deckle, builds, replaces /Applications/Deckle.app, and launches it
 ```
@@ -180,14 +180,14 @@ screen geometry, and live overlay behavior in the bundled app.
 
 ## Roadmap
 
-- [Battery auto-disable & Low Power Mode awareness](https://github.com/YellowFoxH4XOR/deckle/issues/17)
-- [Built-in sunrise/sunset scheduling](https://github.com/YellowFoxH4XOR/deckle/issues/19) (today: use a Shortcuts automation or cron with `deckle://on`)
-- [Custom snooze durations](https://github.com/YellowFoxH4XOR/deckle/issues/18)
-- [Localization](https://github.com/YellowFoxH4XOR/deckle/issues/14)
+- [Battery auto-disable & Low Power Mode awareness](https://github.com/Kelvanic/deckle/issues/17)
+- [Built-in sunrise/sunset scheduling](https://github.com/Kelvanic/deckle/issues/19) (today: use a Shortcuts automation or cron with `deckle://on`)
+- [Custom snooze durations](https://github.com/Kelvanic/deckle/issues/18)
+- [Localization](https://github.com/Kelvanic/deckle/issues/14)
 
 ## Contributing
 
-The easiest PR: [share a paper recipe](https://github.com/YellowFoxH4XOR/deckle-papers) — a small JSON file, no Swift needed. For code, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [good first issues](https://github.com/YellowFoxH4XOR/deckle/labels/good%20first%20issue). Questions and ideas → [Discussions](https://github.com/YellowFoxH4XOR/deckle/discussions).
+The easiest PR: [share a paper recipe](https://github.com/YellowFoxH4XOR/deckle-papers) — a small JSON file, no Swift needed. For code, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [good first issues](https://github.com/Kelvanic/deckle/labels/good%20first%20issue). Questions and ideas → [Discussions](https://github.com/Kelvanic/deckle/discussions).
 
 ## License
 

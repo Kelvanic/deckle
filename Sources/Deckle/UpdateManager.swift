@@ -2,7 +2,7 @@ import AppKit
 import Combine
 
 /// Lightweight self-updater backed by GitHub Releases: checks
-/// repos/YellowFoxH4XOR/deckle/releases/latest daily, compares versions, and
+/// repos/Kelvanic/deckle/releases/latest daily, compares versions, and
 /// either surfaces an "Update" button in the menu or — when the user enables
 /// automatic updates — downloads the DMG and swaps the app bundle in place.
 /// When in-place replacement is impossible, the failure explains itself; the
@@ -77,8 +77,8 @@ final class UpdateManager: ObservableObject {
     private let checkActivity = NSBackgroundActivityScheduler(
         identifier: "app.deckle.Deckle.update-check"
     )
-    private let releasesPage = URL(string: "https://github.com/YellowFoxH4XOR/deckle/releases/latest")!
-    private let apiURL = URL(string: "https://api.github.com/repos/YellowFoxH4XOR/deckle/releases/latest")!
+    private let releasesPage = URL(string: "https://github.com/Kelvanic/deckle/releases/latest")!
+    private let apiURL = URL(string: "https://api.github.com/repos/Kelvanic/deckle/releases/latest")!
 
     private init() {
         autoInstall = UserDefaults.standard.bool(forKey: "autoInstallUpdates")
@@ -174,7 +174,7 @@ final class UpdateManager: ObservableObject {
             .flatMap { url in
                 url.scheme == "https"
                     && url.host == "github.com"
-                    && url.path.hasPrefix("/YellowFoxH4XOR/deckle/releases/download/")
+                    && url.path.hasPrefix("/Kelvanic/deckle/releases/download/")
                     ? url : nil
             }
 
