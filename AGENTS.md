@@ -39,7 +39,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 | Main menu | `MenuView.swift`, `HeroCardView.swift`, `PaperBallView.swift`, `DeskSetupsView.swift`, `PresetCardView.swift`, `PaperSearch.swift`, `QuickControlsView.swift`, `MenuPopover.swift`, `MenuDismiss.swift`, `StudioStyle.swift`, `PetsView.swift` | Status, desk setups, search, paper library, pets panel, controls, popover sizing and dismissal, Echo companion animation, shared palette, paper samples, and studio controls |
 | Pets | `Pet.swift`, `PetArtwork.swift`, `PetController.swift` | Pet kind/mood/size/display state, deterministic motion cycles, layered paper-cut artwork, and the single small click-through pet window |
 | Paper creation | `PaperMill.swift`, `PaperComfort.swift` | Custom paper editing, live preview, comfort estimates, import/export |
-| Community and updates | `CommunityBrowser.swift`, `UpdateManager.swift` | Community paper index, download/install, GitHub release updates |
+| Updates | `UpdateManager.swift` | GitHub release updates |
 | Automation | `HotKey.swift`, `URLCommands.swift` | Global shortcut and `deckle://` commands |
 | Assets and packaging | `Icons.swift`, `Support/Info.plist`, `scripts/GenerateIcon.swift`, `Makefile` | Menu glyph, app metadata, app bundle, DMG |
 
@@ -106,7 +106,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - Search operates across built-in and custom papers. Normalize case, accents, and whitespace, and search render-independent metadata only; searching must never render textures.
 - Category filters must include matching custom papers and reset to All when the library is left.
 - A horizontally scrolling row needs an explicit overflow affordance, and every item in it must be reachable by clicking. The five control tabs fit at 370 points without scrolling; do not add a fade or paging arrow unless they overflow.
-- Preserve stable entry points for New, Import, and Community Papers. A dismissible promo card is not sufficient navigation.
+- Preserve stable entry points for New and Import. A dismissible promo card is not sufficient navigation.
 - `MenuDismiss` may dismiss MenuBarExtra/popover content only. It must not order out `NSColorPanel`, `NSStatusBarWindow`, or arbitrary nonactivating panels, and it must never send a generic `performClose:` down the responder chain.
 - AppKit and observable UI singletons are `@MainActor`. Stored callback closures are not automatically actor-isolated under the Xcode 15 release compiler; hop explicitly with `Task { @MainActor in ... }` before calling them.
 
@@ -138,7 +138,7 @@ UI and AppKit window behavior often lack a useful unit-test seam. For those chan
 - Comments explain constraints, compatibility, or non-obvious lifecycle behavior—not the next statement.
 - Keep AppKit operations on the main actor.
 - Avoid force unwraps for external data and window discovery.
-- Imported paper JSON and community data are untrusted. Keep numeric clamping, path sanitization, and fixed-host HTTPS restrictions intact.
+- Imported paper JSON is untrusted. Keep numeric clamping, path sanitization, and fixed-host HTTPS restrictions intact.
 - Do not suppress errors or warnings to hide a root cause.
 - Do not add dependencies for behavior available in Foundation, AppKit, SwiftUI, CoreGraphics, Combine, ServiceManagement, Accelerate, or Carbon.
 
