@@ -69,6 +69,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
   - Do not add wall-clock reads, system randomness, or `hashValue`.
 - Pet animation is one ~30 Hz timer updating retained layer transforms and a small window frame. Stop it when pets are off/hidden, the display sleeps, or the session is inactive; under Reduce Motion or Low Power Mode the pet stays visible but settles into a grounded still pose. Do not render textures or rebuild artwork per frame.
 - Every pet layer is canvas-sized with an explicit pivot, so all paths share one canvas space and anchor rotations work.
+- Pet volume comes from `PetArtwork.piece`/`fanPiece`: a soft `shadowPath` cast shadow plus `volume(_:)` form shading — translucent bands built at build time by subtracting the path from copies slid along `PetArtwork.light`. No masks, filters, or gradients. The shading layer has `zPosition` 1 so details added later sit under it; anything that must draw above a piece's shading inside the same group (a nested piece like the tail tip, eye glints, a pupil) needs `zPosition` 2.
 - `PetRig` never writes the host-owned `root` transform; hosts size it with `place(in:)`. Overlays (sleep z's, bubbles) live unflipped in root space.
 - No pose may draw outside the 160 × 120 canvas; `PetArtworkTests` sweeps every mood to enforce it.
 - Keep posture arithmetic in short typed terms (`weigh`). The Xcode 15 release compiler can time out on long literal `CGFloat` expressions.
