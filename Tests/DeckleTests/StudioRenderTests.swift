@@ -92,19 +92,6 @@ final class StudioRenderTests: XCTestCase {
         try saveReview(PaperMillView(draft: draft, isNew: true, dismiss: {}, state: state)
             .frame(width: 430, height: 740).background(Color(nsColor: .windowBackgroundColor)),
                        name: "paper-mill-dark", directory: directory, scheme: .dark)
-        let browser = CommunityBrowser()
-        browser.entries = [
-            .init(file: "sample-1.json", name: "Quiet morning", author: "Sample maker", description: "A warm, restrained finish for reading and writing."),
-            .init(file: "sample-2.json", name: "Garden notes", author: "Sample maker", description: "A gentle green tint with a little woven texture."),
-            .init(file: "sample-3.json", name: "After hours", author: "Sample maker", description: "A deep, muted paper for a quieter desktop.")
-        ]
-        browser.status = .loaded
-        try saveReview(CommunityView(browser: browser), name: "studio-community", directory: directory)
-        try saveReview(CommunityView(browser: browser), name: "studio-community-dark", directory: directory, scheme: .dark)
-        browser.entries = []
-        try saveReview(CommunityView(browser: browser), name: "studio-community-empty", directory: directory)
-        browser.status = .failed("Couldn't load the community index")
-        try saveReview(CommunityView(browser: browser), name: "studio-community-offline", directory: directory)
     }
 
     @MainActor

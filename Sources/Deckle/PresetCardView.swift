@@ -213,7 +213,6 @@ struct PresetCollectionView: View {
                         }
                     }
                     Button("Import Papers…") { PaperFiles.importPapers() }
-                    Button("Community Papers…") { CommunityBrowser.shared.open() }
                 } label: {
                     // Menu takes its accessibility name from its label
                     // content; a modifier on the Menu itself is ignored.

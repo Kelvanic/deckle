@@ -2,10 +2,6 @@
 
 Thanks for considering it! Deckle is a small, focused app — contributions that keep it small and focused are the most welcome kind.
 
-## The easiest contribution: share a paper
-
-No Swift required. Create a paper in Paper Mill (the **Paper Mill** button at the top of the menu, or **Paper library → … → New Paper…**), right-click it in the library → **Export Paper…**, and open a PR adding the JSON to [deckle-papers](https://github.com/YellowFoxH4XOR/deckle-papers).
-
 ## Building
 
 ```sh
@@ -31,7 +27,7 @@ No third-party dependencies — Swift and Apple frameworks, built with SwiftPM. 
 - `TexturePreset.swift` — paper recipes (data) and engine versions. `TextureRenderer.swift` — renders them into small seamless tiles: the original value-noise engine, the FFT-based spectral engine, and its fiber layers.
 - `OverlayWindow`/`OverlayController` — one click-through window per display; the texture is a CALayer pattern color (retained-mode — nothing renders per frame).
 - `AppState` — all settings, persisted to UserDefaults. `MenuView` and its child views — the menu bar popover UI.
-- `PaperMill`/`CommunityBrowser` — custom papers and the shared-recipe browser. `URLCommands` — the `deckle://` automation surface. `UpdateManager` — GitHub release updates.
+- `PaperMill` — custom papers, with import and export. `URLCommands` — the `deckle://` automation surface. `UpdateManager` — GitHub release updates.
 
 ## Releases
 

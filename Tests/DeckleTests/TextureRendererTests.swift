@@ -179,7 +179,7 @@ final class TextureRendererTests: XCTestCase {
         }
         """.data(using: .utf8)!
         let original = try JSONDecoder().decode(CustomPaper.self, from: json)
-        // Import and community install assign a fresh id but keep the seed.
+        // Import assigns a fresh id but keeps the seed.
         var imported = try JSONDecoder().decode(
             CustomPaper.self, from: try JSONEncoder().encode(original))
         imported.id = "custom-\(UUID().uuidString.lowercased())"
