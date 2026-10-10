@@ -106,8 +106,8 @@ Deckle requires macOS 13 or later and runs natively on Apple silicon and Intel M
 ### Homebrew
 
 ```sh
-brew tap yellowfoxh4xor/tap
-brew trust yellowfoxh4xor/tap   # Homebrew 6+ asks once for third-party taps
+brew tap kelvanic/tap
+brew trust kelvanic/tap   # Homebrew 6+ asks once for third-party taps
 brew install --cask deckle
 ```
 
