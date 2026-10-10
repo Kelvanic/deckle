@@ -42,19 +42,68 @@ enum PetArtwork {
         return layer
     }
 
-    /// One cut piece of paper in its own pivoting group, over a crisp
-    /// under-shadow a hair below it — the piece reads as resting on whatever
-    /// lies beneath. Details added to the group ride along with the piece.
+    /// Light falls from above and a little ahead of the pet (canvas y is up;
+    /// both pets face +x), so every piece has a lit crown and a shaded
+    /// underside. Mirroring the figure mirrors the light with it, as in any
+    /// hand-drawn sprite.
+    static let light = CGVector(dx: 0.42, dy: 0.91)
+
+    /// One cut piece in its own pivoting group, rounded by soft form shading
+    /// and lifted off whatever lies beneath by a blurred shadow. The shadow
+    /// is drawn from the path alone, so its blur never depends on animated
+    /// content. Details added to the group ride along with the piece and
+    /// sit under its shading, so stripes and patches curve with the form.
     static func piece(_ path: CGPath, fill: NSColor, shade: NSColor,
                       pivot: CGPoint? = nil, depth: CGFloat = 1.3) -> CALayer {
         let group = self.group(pivot: pivot)
-        if depth > 0 {
-            let shadow = shape(path, fill: shade)
-            shadow.setAffineTransform(CGAffineTransform(translationX: 0, y: -depth))
-            group.addSublayer(shadow)
-        }
+        lift(group, path: path, shade: shade, depth: depth)
         group.addSublayer(shape(path, fill: fill))
+        group.addSublayer(volume(path, shade: shade))
         return group
+    }
+
+    /// A soft cast shadow under `layer`, shaped by `path`.
+    static func lift(_ layer: CALayer, path: CGPath, shade: NSColor, depth: CGFloat) {
+        guard depth > 0 else { return }
+        layer.shadowPath = path
+        layer.shadowColor = shade.withAlphaComponent(1).cgColor
+        layer.shadowOpacity = Float(min(0.6, shade.alphaComponent * 1.25))
+        layer.shadowRadius = depth * 1.2
+        layer.shadowOffset = CGSize(width: 0, height: -depth * 1.3)
+    }
+
+    /// Form shading clipped to `path` at build time: stacked translucent
+    /// bands — the path minus copies of itself slid along the light — that
+    /// read as a smooth gradient without masks or per-frame work. Sits above
+    /// later details (zPosition 1) so markings shade with the surface.
+    static func volume(_ path: CGPath, shade: NSColor, highlight: NSColor = .white,
+                       strength: CGFloat = 1) -> CALayer {
+        let layer = group()
+        layer.zPosition = 1
+        let box = path.boundingBoxOfPath
+        let reach = min(13, 0.42 * min(box.width, box.height))
+        guard reach > 0.6 else { return layer }
+        func band(_ along: CGFloat) -> CGPath {
+            var slide = CGAffineTransform(translationX: light.dx * along, y: light.dy * along)
+            guard let moved = path.copy(using: &slide) else { return CGMutablePath() }
+            return path.subtracting(moved)
+        }
+        // Many faint, evenly stepped bands: each edge accumulates every band
+        // that reaches it, so darkness falls off smoothly instead of in
+        // visible terraces even at 3×.
+        let shadowBands = 9
+        let core = shade.withAlphaComponent(0.036 * strength)
+        for index in 1...shadowBands {
+            let fraction = CGFloat(index) / CGFloat(shadowBands)
+            layer.addSublayer(shape(band(reach * fraction), fill: core))
+        }
+        let sheenBands = 7
+        let sheen = highlight.withAlphaComponent(0.042 * strength)
+        for index in 1...sheenBands {
+            let fraction = CGFloat(index) / CGFloat(sheenBands)
+            layer.addSublayer(shape(band(-reach * 0.5 * fraction), fill: sheen))
+        }
+        return layer
     }
 
     // MARK: Paths
@@ -139,15 +188,13 @@ enum PetArtwork {
         }
     }
 
-    /// A pleated fan as one paper piece: shared under-shadow, alternating
-    /// tones, and a pale crease down every fold.
+    /// A pleated fan as one paper piece: soft cast shadow, alternating
+    /// tones, a pale crease down every fold, and gentle form shading.
     static func fanPiece(_ wedges: [CGPath], tones: (NSColor, NSColor), crease: NSColor,
                          shade: NSColor, pivot: CGPoint, depth: CGFloat = 1.1) -> CALayer {
         let outline = wedges.dropFirst().reduce(wedges.first ?? CGMutablePath()) { $0.union($1) }
         let group = self.group(pivot: pivot)
-        let shadow = shape(outline, fill: shade)
-        shadow.setAffineTransform(CGAffineTransform(translationX: 0, y: -depth))
-        group.addSublayer(shadow)
+        lift(group, path: outline, shade: shade, depth: depth)
         let folds = CGMutablePath()
         for (index, wedge) in wedges.enumerated() {
             group.addSublayer(shape(wedge, fill: index.isMultiple(of: 2) ? tones.0 : tones.1))
@@ -157,6 +204,7 @@ enum PetArtwork {
             }
         }
         group.addSublayer(line(folds, color: crease, width: 0.6))
+        group.addSublayer(volume(outline, shade: shade, strength: 0.8))
         return group
     }
 
@@ -368,6 +416,15 @@ private final class CatFigure {
         blob.shadowRadius = 2.6
         blob.shadowOffset = .zero
         groundShadow.addSublayer(blob)
+        // A tighter, darker core right under the paws grounds the figure.
+        let contact = CALayer()
+        contact.frame = CGRect(origin: .zero, size: PetArtwork.canvas)
+        contact.shadowPath = a.ellipse(CGPoint(x: 76, y: ground + 0.5), 66, 3.2)
+        contact.shadowColor = NSColor.black.cgColor
+        contact.shadowOpacity = 0.22
+        contact.shadowRadius = 1.1
+        contact.shadowOffset = .zero
+        groundShadow.addSublayer(contact)
 
         torso = a.group(pivot: Self.hip)
         front = a.group(pivot: Self.waist)
@@ -384,6 +441,8 @@ private final class CatFigure {
         tailTip.addSublayer(a.shape(tailEnd.intersection(rings), fill: stripe))
         let baseRing = a.ribbon([CGPoint(x: 22, y: 58), CGPoint(x: 32, y: 66)], widths: [2.4, 2.4])
         tail.addSublayer(a.shape(tailBase.intersection(baseRing), fill: stripe))
+        // A nested piece must stay above its parent's shading.
+        tailTip.zPosition = 2
         tail.addSublayer(tailTip)
 
         // Legs: tapered strips with mitten paws, far pair a shade darker.
@@ -506,15 +565,25 @@ private final class CatFigure {
         head.addSublayer(earNear)
         head.addSublayer(face)
 
-        // Eyes: ink ovals with a catchlight, blinking about their own centres
-        // and shifting together toward the cursor.
+        // Eyes: amber irises with ink pupils, a big catchlight and a small
+        // reflected glint, so they read as glossy domes. They blink about
+        // their own centres and shift together toward the cursor.
+        let amber = a.color(0.545, 0.388, 0.122)
         look = a.group()
         var eyes: [CALayer] = []
         for center in [CGPoint(x: 114.5, y: 71.5), CGPoint(x: 128, y: 71.5)] {
             let eye = a.group(pivot: center)
-            eye.addSublayer(a.shape(a.ellipse(center, 5.4, 7), fill: ink))
-            eye.addSublayer(a.shape(a.ellipse(CGPoint(x: center.x + 1.1, y: center.y + 1.6), 2, 2),
-                                    fill: .white))
+            let ball = a.ellipse(center, 5.4, 7)
+            eye.addSublayer(a.shape(ball, fill: amber))
+            eye.addSublayer(a.shape(a.ellipse(CGPoint(x: center.x + 0.2, y: center.y), 3.9, 6), fill: ink))
+            eye.addSublayer(a.volume(ball, shade: ink, strength: 1.4))
+            let glints = a.group(pivot: center)
+            glints.zPosition = 2
+            glints.addSublayer(a.shape(a.ellipse(CGPoint(x: center.x + 1.1, y: center.y + 1.7), 2.2, 2.2),
+                                       fill: .white))
+            glints.addSublayer(a.shape(a.ellipse(CGPoint(x: center.x - 1.2, y: center.y - 2), 1, 1),
+                                       fill: .white.withAlphaComponent(0.7)))
+            eye.addSublayer(glints)
             look.addSublayer(eye)
             eyes.append(eye)
         }
@@ -874,13 +943,21 @@ private final class FishFigure {
         // A big friendly eye with a catchlight; the pupil tracks the cursor.
         let eyeCenter = CGPoint(x: 126, y: 67)
         eye = a.group(pivot: eyeCenter)
-        let white = a.shape(a.ellipse(eyeCenter, 15, 15), fill: cream)
+        let sclera = a.ellipse(eyeCenter, 15, 15)
+        let white = a.shape(sclera, fill: cream)
         white.strokeColor = blueDeep.cgColor
         white.lineWidth = 1
         eye.addSublayer(white)
+        // The eyeball shades like a sphere; the pupil rides above it.
+        eye.addSublayer(a.volume(sclera, shade: blueDeep, strength: 1.3))
         pupil = a.group(pivot: eyeCenter)
-        pupil.addSublayer(a.shape(a.ellipse(CGPoint(x: eyeCenter.x + 1.4, y: eyeCenter.y), 8.6, 8.6), fill: ink))
+        pupil.zPosition = 2
+        let pupilCenter = CGPoint(x: eyeCenter.x + 1.4, y: eyeCenter.y)
+        pupil.addSublayer(a.shape(a.ellipse(pupilCenter, 8.6, 8.6), fill: blueDeep))
+        pupil.addSublayer(a.shape(a.ellipse(pupilCenter, 6, 6), fill: ink))
         pupil.addSublayer(a.shape(a.ellipse(CGPoint(x: eyeCenter.x + 3, y: eyeCenter.y + 2), 2.8, 2.8), fill: .white))
+        pupil.addSublayer(a.shape(a.ellipse(CGPoint(x: eyeCenter.x - 0.4, y: eyeCenter.y - 2.2), 1.2, 1.2),
+                                  fill: .white.withAlphaComponent(0.7)))
         eye.addSublayer(pupil)
         let lid = CGMutablePath()
         lid.move(to: CGPoint(x: eyeCenter.x - 5.5, y: eyeCenter.y))
