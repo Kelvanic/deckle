@@ -2,6 +2,12 @@
 
 A native Windows port of Deckle's core: the same deterministic paper texture over every display, controlled from the notification area. It is a small Rust program with one dependency, Microsoft's [`windows-sys`](https://crates.io/crates/windows-sys) bindings, and needs no runtime.
 
+![Deckle's Soft Wove paper over Notepad on Windows, with the tray menu and its Paper submenu open: Clear Veil, Book Cream, Quiet Gray, and Evening Shade under Quiet reading, Soft Wove checked under Light papers, and four dark papers](../docs/windows-paper-menu.png)
+
+![The same Notepad text under four papers at 35% intensity: Soft Wove, Foxed Amber, Linen Veil, and Ink Stone](../docs/windows-papers.png)
+
+<sub>Captured by the CI smoke test on a GitHub-hosted Windows runner. The grid shows Soft Wove, Foxed Amber, Linen Veil, and Ink Stone, left to right and top to bottom.</sub>
+
 ## What it does
 
 - **Paper on every monitor.** Each monitor gets one borderless, click-through, always-on-top layered window that never takes focus or appears in Alt+Tab. Each window renders at its monitor's own display scale.
@@ -28,6 +34,12 @@ cargo test                     # unit tests (renderer, papers, settings, state, 
 ```
 
 The executable is `windows\target\release\deckle.exe`. CI builds it for every pull request; download it from the run's `deckle-windows` artifact. The build is unsigned, so SmartScreen may warn on first launch.
+
+CI also runs `scripts/smoke.ps1` on the Windows runner. The script launches `deckle.exe` over a page of text in Notepad and fails unless the tray window and a visible overlay appear and the overlay changes the screen. It also saves screenshots of four papers and the tray menu, which CI uploads as the `deckle-windows-screenshots` artifact. To run it locally after a release build:
+
+```powershell
+pwsh -File scripts\smoke.ps1 -Exe target\release\deckle.exe -OutDir screenshots
+```
 
 The renderer, paper library, settings, state, menu model, and tray icon are plain Rust, so `cargo test` also runs on macOS and Linux. Only `src/win/` needs Windows. To type-check it elsewhere:
 

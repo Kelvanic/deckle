@@ -133,6 +133,8 @@ Or `make run` to build and launch it from `dist/` without installing. Local buil
 
 A native Windows port of the core lives in [`windows/`](windows/README.md): paper on every monitor, all 26 built-in papers, a tray menu for on/off, snooze, paper, and intensity, and Ctrl+Alt+P. It is a small Rust program that needs no runtime. Build it with `cargo run --release` from `windows/`, or download `deckle.exe` from a CI run's `deckle-windows` artifact. Paper Mill, custom papers, pets, and the other Mac features are not ported yet.
 
+<p align="center"><img src="docs/windows-paper-menu.png" alt="Deckle's Soft Wove paper over Notepad on Windows, with the tray menu and its Paper submenu open" width="512"></p>
+
 ## How it works
 
 - Deckle owns one borderless, transparent `NSWindow` per display at `.screenSaver` level. Each window ignores mouse events, joins every Space including full-screen ones, stays out of the window cycle, and tiles one small paper image through Core Animation, so memory does not grow with display resolution.

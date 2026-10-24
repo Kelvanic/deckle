@@ -7,3 +7,4 @@ dist/
 .vscode/
 .ruby-lsp/
 windows/target/
+windows/screenshots/

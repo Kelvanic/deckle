@@ -121,7 +121,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - `src/renderer.rs` ports the v4 spectral fiber engine. Keep its constants and the order of every random draw identical to `TextureRenderer.swift`; output need not be byte-identical across platforms.
 - Overlays follow the macOS contract: one click-through, never-activating, topmost window per monitor; render only when visible; keep only the small tile in process memory.
 - Win32 can re-enter the window procedure (the tray menu runs a modal loop). Borrow the app state briefly and never across `TrackPopupMenuEx`.
-- Commands, from `windows/`: `cargo test`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and on non-Windows hosts `cargo clippy --all-targets --target x86_64-pc-windows-msvc -- -D warnings` to type-check `src/win/`. CI runs the first three on `windows-latest` and uploads `deckle.exe`.
+- Commands, from `windows/`: `cargo test`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and on non-Windows hosts `cargo clippy --all-targets --target x86_64-pc-windows-msvc -- -D warnings` to type-check `src/win/`. CI runs the first three on `windows-latest`, uploads `deckle.exe`, then runs `scripts/smoke.ps1`. That script launches the app over Notepad, fails unless the overlay and tray windows appear and change the screen, and uploads screenshots. Refresh `docs/windows-*.png` from those screenshots when the Windows UI changes.
 
 ## Testing expectations
 
