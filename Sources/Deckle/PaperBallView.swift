@@ -272,11 +272,15 @@ final class EchoBallView: NSView {
             context.rotate(by: -angle)
         }
         context.scaleBy(x: 1 + motion.squash * 0.22, y: 1 - motion.squash * 0.3)
+        // One opaque ink colour with a per-dot alpha draws the same pixels as
+        // a translucent colour per dot, without ~180 colour objects a frame.
+        context.setFillColor(ink.cgColor)
         for dot in EchoGeometry.dots(radius: radius, phase: motion.phase) {
-            context.setFillColor(ink.withAlphaComponent(dot.opacity).cgColor)
+            context.setAlpha(dot.opacity)
             context.fillEllipse(in: CGRect(x: dot.center.x - dot.radius, y: dot.center.y - dot.radius,
                                           width: dot.radius * 2, height: dot.radius * 2))
         }
+        context.setAlpha(1)
         let core = max(8, radius * 0.16 + sin(motion.phase * 2) * 1.1)
         context.setFillColor(ink.cgColor)
         context.fillEllipse(in: CGRect(x: -core, y: -core, width: core * 2, height: core * 2))

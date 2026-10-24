@@ -179,7 +179,7 @@ final class TextureRendererTests: XCTestCase {
         }
         """.data(using: .utf8)!
         let original = try JSONDecoder().decode(CustomPaper.self, from: json)
-        // Import and community install assign a fresh id but keep the seed.
+        // Import assigns a fresh id but keeps the seed.
         var imported = try JSONDecoder().decode(
             CustomPaper.self, from: try JSONEncoder().encode(original))
         imported.id = "custom-\(UUID().uuidString.lowercased())"
@@ -327,21 +327,62 @@ final class TextureRendererTests: XCTestCase {
         XCTAssertEqual(afterLastReplay.tileMisses, beforeLastReplay.tileMisses)
     }
 
-    func testBrowsingTheLibraryKeepsRendererCachesSmall() {
-        // What an open menu renders: the 2x overlay, then every library
-        // swatch exactly as PaperSample requests it.
-        _ = TextureRenderer.compositeTile(for: TexturePreset.all[0], backingScale: 2)
-        for preset in TexturePreset.all {
+    /// Every library swatch exactly as PaperSample requests it.
+    private func browseLibrary(_ presets: [TexturePreset]) {
+        for preset in presets {
             if preset.isQuietReading {
-                _ = TextureRenderer.compositeTile(for: preset, backingScale: 1)
+                _ = TextureRenderer.readingSwatch(for: preset, size: CGSize(width: 92, height: 52))
             } else {
                 _ = TextureRenderer.preview(for: preset, size: CGSize(width: 92, height: 52))
             }
         }
+    }
+
+    func testBrowsingTheLibraryKeepsRendererCachesSmall() {
+        // What an open menu renders: the 2x overlay, then every swatch.
+        _ = TextureRenderer.compositeTile(for: TexturePreset.all[0], backingScale: 2)
+        browseLibrary(TexturePreset.all)
 
         // The overlay's working set plus small swatches. Keeping a 1 MB field
         // and tile for every paper browsed held about 37 MB here.
         XCTAssertLessThan(TextureRenderer.cachedByteCount, 8 * 1_048_576)
+    }
+
+    func testBrowsingTheLibraryKeepsTheOverlayAndRevisitsWithoutRendering() {
+        let overlay = TexturePreset.preset(id: "classic-matte")
+        _ = TextureRenderer.compositeTile(for: overlay, backingScale: 2)
+        // Built-ins plus a handful of custom papers.
+        let library = TexturePreset.all + (0..<8).map { spectralPreset(id: "custom-\($0)", seed: UInt64($0)) }
+
+        let beforeBrowse = TextureRenderer.cacheMetrics
+        browseLibrary(library)
+        let afterBrowse = TextureRenderer.cacheMetrics
+        XCTAssertEqual(afterBrowse.fieldMisses, beforeBrowse.fieldMisses, "swatches must not use the overlay field cache")
+        XCTAssertEqual(afterBrowse.tileMisses, beforeBrowse.tileMisses, "swatches must not use the overlay tile cache")
+        XCTAssertEqual(afterBrowse.compositeMisses, beforeBrowse.compositeMisses, "swatches must not use the overlay composite cache")
+
+        _ = TextureRenderer.compositeTile(for: overlay, backingScale: 2)
+        XCTAssertEqual(TextureRenderer.cacheMetrics.compositeHits, afterBrowse.compositeHits + 1,
+                       "browsing must not evict the overlay tile")
+
+        let beforeRevisit = TextureRenderer.cacheMetrics
+        browseLibrary(library)
+        let afterRevisit = TextureRenderer.cacheMetrics
+        XCTAssertEqual(afterRevisit.previewMisses, beforeRevisit.previewMisses, "a second visit must not re-render swatches")
+        XCTAssertEqual(afterRevisit.previewHits, beforeRevisit.previewHits + library.count)
+    }
+
+    func testReadingSwatchShowsTheOverlayAtReadingIntensity() throws {
+        let preset = try XCTUnwrap(TexturePreset.readingCollection.first { $0.id != "clear-veil" })
+        let size = CGSize(width: 92, height: 52)
+        let image = TextureRenderer.readingSwatch(for: preset, size: size)
+        let cgImage = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        XCTAssertEqual(image.size, size)
+        XCTAssertEqual(cgImage.width, 184)
+        XCTAssertEqual(cgImage.height, 104)
+        XCTAssertTrue(TextureRenderer.readingSwatch(for: preset, size: size) === image, "swatches are cached")
+        XCTAssertFalse(TextureRenderer.readingSwatch(for: preset, size: size, intensity: 0.4) === image,
+                       "intensity is part of the swatch key")
     }
 
     // MARK: - Spectral+ (v3) engine

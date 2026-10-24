@@ -20,7 +20,7 @@ Search also now normalizes interior whitespace and accents and matches terms in 
 - Paper library and detailed controls use separate focused views.
 - Rust accents, serif material names, and flatter paper samples replace the generic status-card emphasis.
 
-This uses the existing Deckle design system and brand rust, extended for the studio workflow. Paper Mill and community navigation remain available. The procedural grain algorithms and legacy grain output were not changed; a separate matte pass now adjusts the final tint composite.
+This uses the existing Deckle design system and brand rust, extended for the studio workflow. Paper Mill navigation remains available. The procedural grain algorithms and legacy grain output were not changed; a separate matte pass now adjusts the final tint composite.
 
 ## Verification and remaining manual checks
 

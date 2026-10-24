@@ -43,15 +43,4 @@ final class InputValidationTests: XCTestCase {
         URLCommands.handle(try XCTUnwrap(URL(string: "deckle://texture?id=ink-stone")), state: state)
         XCTAssertEqual(state.textureID, "carbon-ledger")
     }
-
-    func testCommunityPaperFileNamesAreAllowlisted() {
-        XCTAssertEqual(
-            CommunityBrowser.paperURL(for: "warm-linen_2.json")?.absoluteString,
-            "https://raw.githubusercontent.com/YellowFoxH4XOR/deckle-papers/main/papers/warm-linen_2.json"
-        )
-        for file in ["../index.json", "a/b.json", "%2e%2e/x.json", "x.json?raw=1",
-                     ".hidden.json", "paper.txt", "....json/", ""] {
-            XCTAssertNil(CommunityBrowser.paperURL(for: file), file)
-        }
-    }
 }

@@ -56,11 +56,15 @@ enum TextureRenderer {
     /// hold only the overlay's working set: enough for a slider drag to reuse
     /// its field and tile, and for two displays at different backing scales.
     /// Library thumbnails stay cheap to revisit through the preview cache,
-    /// which keeps only the small finished swatch.
+    /// which keeps only the small finished swatch (about 75 KB each). Swatches
+    /// never pass through the overlay caches, so browsing the library cannot
+    /// evict the overlay's field mid-drag. The preview cache holds every
+    /// built-in swatch plus room for custom papers: a cache smaller than the
+    /// library misses on every visit, re-rendering each swatch's field.
     private static var fieldCache = LRUCache<String, [Float]>(capacity: 2)
     private static var tileCache = LRUCache<String, NSImage>(capacity: 2)
     private static var compositeCache = LRUCache<String, NSImage>(capacity: 2)
-    private static var previewCache = LRUCache<String, NSImage>(capacity: 24)
+    private static var previewCache = LRUCache<String, NSImage>(capacity: 48)
 
     /// Clears every cache and resets diagnostic counters. Exposed for tests
     /// that need isolation between cases.
@@ -158,17 +162,18 @@ enum TextureRenderer {
     static func compositeTile(
         for preset: TexturePreset,
         adjustments: GrainAdjustments = .none,
-        backingScale: CGFloat = 2
+        backingScale: CGFloat = 2,
+        cached: Bool = true
     ) -> NSImage {
         let scale = normalizedScale(backingScale)
         let key = "\(preset.cacheSignature)|\(adjustments.cacheKey)|bs\(scale)"
-        if let hit = compositeCache.get(key) {
+        if cached, let hit = compositeCache.get(key) {
             cacheMetrics.compositeHits += 1
             return hit
         }
-        cacheMetrics.compositeMisses += 1
+        if cached { cacheMetrics.compositeMisses += 1 }
 
-        let grain = tile(for: preset, adjustments: adjustments, backingScale: scale)
+        let grain = tile(for: preset, adjustments: adjustments, backingScale: scale, cached: cached)
         let pointSize = grain.size
         let pixelWidth = max(1, Int((pointSize.width * scale).rounded()))
         let pixelHeight = max(1, Int((pointSize.height * scale).rounded()))
@@ -205,7 +210,7 @@ enum TextureRenderer {
         context.draw(grainImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
 
         let image = context.makeImage().map { NSImage(cgImage: $0, size: pointSize) } ?? grain
-        compositeCache.set(key, image)
+        if cached { compositeCache.set(key, image) }
         return image
     }
 
@@ -227,7 +232,9 @@ enum TextureRenderer {
         }
         if cached { cacheMetrics.previewMisses += 1 }
 
-        let grain = tile(for: preset, backingScale: scale, cached: cached)
+        // The finished swatch is what gets cached; its grain stays out of the
+        // overlay's two-entry tile and field caches.
+        let grain = tile(for: preset, backingScale: scale, cached: false)
         let pixelWidth = max(1, Int((size.width * scale).rounded()))
         let pixelHeight = max(1, Int((size.height * scale).rounded()))
         let backdrop: NSColor = preset.isDark
@@ -269,27 +276,95 @@ enum TextureRenderer {
             context.fill(CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
         }
 
-        // Tile the seamless grain pattern across the swatch by hand — a raw
-        // CGContext has no AppKit pattern-color fill, and the tile is small
-        // enough that a manual draw loop is cheap.
-        let tileWidth = grainImage.width
-        let tileHeight = grainImage.height
-        if tileWidth > 0, tileHeight > 0 {
-            var y = 0
-            while y < pixelHeight {
-                var x = 0
-                while x < pixelWidth {
-                    context.draw(grainImage, in: CGRect(x: x, y: y, width: tileWidth, height: tileHeight))
-                    x += tileWidth
-                }
-                y += tileHeight
-            }
-        }
+        drawTiled(grainImage, tileWidth: grainImage.width, tileHeight: grainImage.height,
+                  in: context, pixelWidth: pixelWidth, pixelHeight: pixelHeight)
 
         guard let composed = context.makeImage() else { return NSImage(size: size) }
         let image = NSImage(cgImage: composed, size: size)
         if cached { previewCache.set(key, image) }
         return image
+    }
+
+    /// Swatch for a quiet reading paper: the real 1x overlay tile at the
+    /// given intensity over a plain backdrop, never boosted. Cached with the
+    /// other swatches; rendering it bypasses the overlay caches.
+    static func readingSwatch(
+        for preset: TexturePreset,
+        size: CGSize,
+        intensity: CGFloat = 0.22,
+        backingScale: CGFloat = 2
+    ) -> NSImage {
+        let scale = normalizedScale(backingScale)
+        let sizeKey = "\(Double(size.width).bitPattern)x\(Double(size.height).bitPattern)"
+        let key = "\(preset.cacheSignature)|reading\(Double(intensity).bitPattern)|\(sizeKey)|bs\(scale)"
+        if let hit = previewCache.get(key) {
+            cacheMetrics.previewHits += 1
+            return hit
+        }
+        cacheMetrics.previewMisses += 1
+
+        let overlay = compositeTile(for: preset, backingScale: 1, cached: false)
+        let pixelWidth = max(1, Int((size.width * scale).rounded()))
+        let pixelHeight = max(1, Int((size.height * scale).rounded()))
+        let backdrop: NSColor = preset.isDark
+            ? NSColor(srgbRed: 0.16, green: 0.16, blue: 0.18, alpha: 1)
+            : .white
+
+        guard
+            let overlayImage = overlay.cgImage(forProposedRect: nil, context: nil, hints: nil),
+            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+            let context = CGContext(
+                data: nil,
+                width: pixelWidth,
+                height: pixelHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ),
+            let backdropColor = backdrop.usingColorSpace(.sRGB)
+        else {
+            return NSImage(size: size)
+        }
+
+        context.setFillColor(
+            red: backdropColor.redComponent,
+            green: backdropColor.greenComponent,
+            blue: backdropColor.blueComponent,
+            alpha: 1
+        )
+        context.fill(CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
+        // The 1x tile keeps its point size, so it is upsampled on 2x swatches
+        // exactly as the tiled SwiftUI image it replaces was.
+        context.setAlpha(min(max(intensity, 0), 1))
+        drawTiled(overlayImage,
+                  tileWidth: max(1, Int((overlay.size.width * scale).rounded())),
+                  tileHeight: max(1, Int((overlay.size.height * scale).rounded())),
+                  in: context, pixelWidth: pixelWidth, pixelHeight: pixelHeight)
+
+        guard let composed = context.makeImage() else { return NSImage(size: size) }
+        let image = NSImage(cgImage: composed, size: size)
+        previewCache.set(key, image)
+        return image
+    }
+
+    /// Tiles a seamless image across a swatch by hand — a raw CGContext has
+    /// no AppKit pattern-color fill, and the tile is small enough that a
+    /// manual draw loop is cheap.
+    private static func drawTiled(
+        _ image: CGImage, tileWidth: Int, tileHeight: Int,
+        in context: CGContext, pixelWidth: Int, pixelHeight: Int
+    ) {
+        guard tileWidth > 0, tileHeight > 0 else { return }
+        var y = 0
+        while y < pixelHeight {
+            var x = 0
+            while x < pixelWidth {
+                context.draw(image, in: CGRect(x: x, y: y, width: tileWidth, height: tileHeight))
+                x += tileWidth
+            }
+            y += tileHeight
+        }
     }
 
     // MARK: - Field (shared cache across both engines)

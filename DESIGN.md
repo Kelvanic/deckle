@@ -241,7 +241,7 @@ Pet artwork carries its own paper shadows (see Pets). They are part of the illus
 ### Paper library
 
 - **Search field:** 12-point radius, 8 × 10-point padding, control background at 90% with an 8% hairline. Focus turns the icon and a 50% hairline to the system accent. Search ignores case, accents, and repeated whitespace and matches terms in any order.
-- **Header:** "Paper library" (or "Search Results" with a rust count capsule), a rust "Your desk" link, and a `…` menu with New Paper…, Import Papers…, and Community Papers… — the stable entry points for creating and adding papers.
+- **Header:** "Paper library" (or "Search Results" with a rust count capsule), a rust "Your desk" link, and a `…` menu with New Paper… and Import Papers… — the stable entry points for creating and adding papers.
 - **Category chips** (hidden while searching): All, Light, Dark, My Papers, plus a circular + for a new paper. Capsule with 4 × 10-point padding; selected chips are rust with white text, unselected are primary at 6%. Leaving the library resets the category to All.
 - **Grid:** three flexible columns with 8-point spacing, inside a row-aware fixed-height viewport capped at 356 points (360 while searching).
 

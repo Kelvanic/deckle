@@ -29,13 +29,8 @@ struct PaperSample: View, Equatable {
         Group {
             if preset.isQuietReading {
                 // Quiet swatches use actual overlay strength, never boosted grain.
-                ZStack {
-                    Color(nsColor: preset.isDark
-                          ? NSColor(srgbRed: 0.16, green: 0.16, blue: 0.18, alpha: 1) : .white)
-                    Image(nsImage: TextureRenderer.compositeTile(for: preset, backingScale: 1))
-                        .resizable(resizingMode: .tile)
-                        .opacity(0.22)
-                }
+                Image(nsImage: TextureRenderer.readingSwatch(for: preset, size: size))
+                    .resizable()
             } else {
                 Image(nsImage: TextureRenderer.preview(for: preset, size: size))
                     .resizable()
