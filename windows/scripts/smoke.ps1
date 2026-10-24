@@ -15,6 +15,27 @@ Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 public static class Native {
+    [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr hwnd);
+    [DllImport("user32.dll")] static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+    [DllImport("gdi32.dll")] static extern bool BitBlt(IntPtr target, int x, int y, int width, int height,
+        IntPtr source, int sourceX, int sourceY, uint operation);
+    const uint SRCCOPY = 0x00CC0020;
+    // Includes layered windows, and the overlay is one. Graphics.CopyFromScreen
+    // refuses this flag combination.
+    const uint CAPTUREBLT = 0x40000000;
+
+    // Copies a screen rectangle into the device context `target`.
+    public static void CopyScreen(IntPtr target, int x, int y, int width, int height) {
+        IntPtr screen = GetDC(IntPtr.Zero);
+        try {
+            if (!BitBlt(target, 0, 0, width, height, screen, x, y, SRCCOPY | CAPTUREBLT)) {
+                throw new InvalidOperationException("BitBlt from the screen failed");
+            }
+        } finally {
+            ReleaseDC(IntPtr.Zero, screen);
+        }
+    }
+
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowW(string className, string title);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);
@@ -33,13 +54,15 @@ New-Item -ItemType Directory -Force -Path (Join-Path $env:APPDATA 'Deckle') | Ou
 $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
 
 function Save-Screen([string] $Name) {
-    $bitmap = [System.Drawing.Bitmap]::new($screen.Width, $screen.Height)
+    $bitmap = [System.Drawing.Bitmap]::new($screen.Width, $screen.Height, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    # CaptureBlt includes layered windows, and the overlay is one.
-    $operation = [System.Drawing.CopyPixelOperation](
-        [int][System.Drawing.CopyPixelOperation]::SourceCopy -bor [int][System.Drawing.CopyPixelOperation]::CaptureBlt)
-    $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size, $operation)
-    $graphics.Dispose()
+    $hdc = $graphics.GetHdc()
+    try {
+        [Native]::CopyScreen($hdc, $screen.X, $screen.Y, $screen.Width, $screen.Height)
+    } finally {
+        $graphics.ReleaseHdc($hdc)
+        $graphics.Dispose()
+    }
     $path = Join-Path $OutDir "$Name.png"
     $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
     $bitmap.Dispose()
