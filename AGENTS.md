@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Deckle is a focused macOS menu-bar app that overlays deterministic paper texture on every display. Keep it small, native, energy-efficient, and compatible with macOS 13.
+Deckle is a focused macOS menu-bar app that overlays deterministic paper texture on every display. Keep it small, native, energy-efficient, and compatible with macOS 13. A Windows preview of the core lives in `windows/`; see [Windows port](#windows-port).
 
 ## Project facts
 
@@ -111,6 +111,18 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - `MenuDismiss` may dismiss MenuBarExtra/popover content only. It must not order out `NSColorPanel`, `NSStatusBarWindow`, or arbitrary nonactivating panels, and it must never send a generic `performClose:` down the responder chain.
 - AppKit and observable UI singletons are `@MainActor`. Stored callback closures are not automatically actor-isolated under the Xcode 15 release compiler; hop explicitly with `Task { @MainActor in ... }` before calling them.
 
+## Windows port
+
+`windows/` is a self-contained Rust crate (`deckle-windows`). It is a port of the macOS core, not a shared codebase: the Swift app stays the reference.
+
+- Dependencies: `windows-sys` only, and only on Windows. Do not add crates for behavior the standard library or Win32 provides.
+- Everything outside `src/win/` is platform-independent and must keep building and testing on macOS and Linux. Keep Win32 calls inside `src/win/`.
+- `src/papers.rs` mirrors the built-ins in `TexturePreset.swift`. When a built-in's id, seed, or recipe changes, change both.
+- `src/renderer.rs` ports the v4 spectral fiber engine. Keep its constants and the order of every random draw identical to `TextureRenderer.swift`; output need not be byte-identical across platforms.
+- Overlays follow the macOS contract: one click-through, never-activating, topmost window per monitor; render only when visible; keep only the small tile in process memory.
+- Win32 can re-enter the window procedure (the tray menu runs a modal loop). Borrow the app state briefly and never across `TrackPopupMenuEx`.
+- Commands, from `windows/`: `cargo test`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and on non-Windows hosts `cargo clippy --all-targets --target x86_64-pc-windows-msvc -- -D warnings` to type-check `src/win/`. CI runs the first three on `windows-latest`, uploads `deckle.exe`, then runs `scripts/smoke.ps1`. That script launches the app over Notepad, fails unless the overlay and tray windows appear and change the screen, and uploads screenshots. Refresh `docs/windows-*.png` from those screenshots when the Windows UI changes.
+
 ## Testing expectations
 
 Tests live in `Tests/DeckleTests` and use XCTest with `@testable import Deckle`.
@@ -155,7 +167,7 @@ UI and AppKit window behavior often lack a useful unit-test seam. For those chan
 - Keep one coherent feature or fix per PR.
 - Include the exact verification commands and results.
 - Include screenshots for UI work.
-- Do not commit `.build/`, `build/`, `dist/`, local preferences, exported private papers, or signing credentials.
+- Do not commit `.build/`, `build/`, `dist/`, `windows/target/`, local preferences, exported private papers, or signing credentials.
 
 ## Releases
 

@@ -6,3 +6,5 @@ dist/
 .swiftpm/
 .vscode/
 .ruby-lsp/
+windows/target/
+windows/screenshots/

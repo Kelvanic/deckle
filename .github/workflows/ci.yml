@@ -2,6 +2,7 @@ name: CI
 
 # Runs the release workflow's verification on the release toolchain, so code
 # the Xcode 15 compiler rejects is caught in review instead of at tag time.
+# The Windows job lints, tests, and builds the Rust port under windows/.
 on:
   pull_request:
   push:
@@ -30,3 +31,42 @@ jobs:
 
       - name: Universal release build
         run: make build UNIVERSAL=1
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        # bash stops at the first failing command; pwsh would only report
+        # the last one.
+        shell: bash
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Lint
+        run: |
+          rustup component add rustfmt clippy
+          cargo fmt --check
+          cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Release build
+        run: cargo build --release --locked
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deckle-windows
+          path: windows/target/release/deckle.exe
+          if-no-files-found: error
+
+      - name: Smoke test and screenshots
+        run: pwsh -NoProfile -File scripts/smoke.ps1 -Exe target/release/deckle.exe -OutDir ../screenshots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deckle-windows-screenshots
+          path: screenshots
+          if-no-files-found: ignore

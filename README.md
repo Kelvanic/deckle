@@ -129,6 +129,12 @@ make install    # quits a running Deckle, builds, replaces /Applications/Deckle.
 
 Or `make run` to build and launch it from `dist/` without installing. Local builds are ad-hoc signed. Look for the italic serif **d** in your menu bar: bold while the paper is showing, faded while it is off, snoozed, or being compared.
 
+### Windows (preview)
+
+A native Windows port of the core lives in [`windows/`](windows/README.md): paper on every monitor, all 26 built-in papers, a tray menu for on/off, snooze, paper, and intensity, and Ctrl+Alt+P. It is a small Rust program that needs no runtime. Build it with `cargo run --release` from `windows/`, or download `deckle.exe` from a CI run's `deckle-windows` artifact. Paper Mill, custom papers, pets, and the other Mac features are not ported yet.
+
+<p align="center"><img src="docs/windows-paper-menu.png" alt="Deckle's Soft Wove paper over Notepad on Windows, with the tray menu and its Paper submenu open" width="512"></p>
+
 ## How it works
 
 - Deckle owns one borderless, transparent `NSWindow` per display at `.screenSaver` level. Each window ignores mouse events, joins every Space including full-screen ones, stays out of the window cycle, and tiles one small paper image through Core Animation, so memory does not grow with display resolution.
@@ -167,7 +173,7 @@ make build UNIVERSAL=1      # arm64 + x86_64 release compile, as the release wor
 make clean
 ```
 
-No third-party dependencies; only Apple frameworks such as SwiftUI, AppKit, Combine, Accelerate, ServiceManagement, and Carbon (for the global hotkey).
+No third-party dependencies; only Apple frameworks such as SwiftUI, AppKit, Combine, Accelerate, ServiceManagement, and Carbon (for the global hotkey). The Windows port in `windows/` builds with Cargo and depends only on Microsoft's `windows-sys` bindings; see [its README](windows/README.md).
 
 Regenerate the native review renders in `docs/` (desk, library, Paper Mill, and reading proofs) with:
 

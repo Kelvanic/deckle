@@ -28,6 +28,7 @@ No third-party dependencies — Swift and Apple frameworks, built with SwiftPM. 
 - `OverlayWindow`/`OverlayController` — one click-through window per display; the texture is a CALayer pattern color (retained-mode — nothing renders per frame).
 - `AppState` — all settings, persisted to UserDefaults. `MenuView` and its child views — the menu bar popover UI.
 - `PaperMill` — custom papers, with import and export. `URLCommands` — the `deckle://` automation surface. `UpdateManager` — GitHub release updates.
+- `windows/` — the Windows preview, a Rust port of the core. Run `cargo test` there; see [its README](windows/README.md).
 
 ## Releases
 
