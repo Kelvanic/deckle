@@ -87,7 +87,9 @@ function Get-Brightness([string] $Path) {
 
 function Wait-Window([string] $Class, [bool] $MustBeVisible) {
     for ($i = 0; $i -lt 50; $i++) {
-        $hwnd = [Native]::FindWindowW($Class, $null)
+        # [NullString]: PowerShell would pass $null as "", which only
+        # matches windows with an empty title.
+        $hwnd = [Native]::FindWindowW($Class, [NullString]::Value)
         if ($hwnd -ne [IntPtr]::Zero -and (-not $MustBeVisible -or [Native]::IsWindowVisible($hwnd))) {
             return $hwnd
         }
