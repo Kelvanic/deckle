@@ -39,6 +39,7 @@ app: build build/AppIcon.icns
 	mkdir -p $(BUNDLE)/Contents/MacOS $(BUNDLE)/Contents/Resources
 	cp Support/Info.plist $(BUNDLE)/Contents/Info.plist
 	cp $(BINARY) $(BUNDLE)/Contents/MacOS/$(APP_NAME)
+	cp -R $(BIN_PATH)/Deckle_Deckle.bundle $(BUNDLE)/Contents/Resources/
 	cp build/AppIcon.icns $(BUNDLE)/Contents/Resources/AppIcon.icns
 	codesign --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)" $(BUNDLE)
 	@echo "Built $(BUNDLE)"

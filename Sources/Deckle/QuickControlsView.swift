@@ -40,21 +40,21 @@ struct QuickControlsView: View {
 
     private var pageTitle: String {
         switch selectedTab {
-        case .grain: return "Dial in the detail."
-        case .snooze: return "Take a little break."
-        case .displays: return "Make room for paper."
-        case .appRules: return "Right place. Right feel."
-        case .settings: return "At home on your Mac."
+        case .grain: return L("Dial in the detail.")
+        case .snooze: return L("Take a little break.")
+        case .displays: return L("Make room for paper.")
+        case .appRules: return L("Right place. Right feel.")
+        case .settings: return L("At home on your Mac.")
         }
     }
 
     private var pageDetail: String {
         switch selectedTab {
-        case .grain: return "Tune the size and presence of your paper's grain."
-        case .snooze: return "A bare screen for a while. Your paper returns automatically."
-        case .displays: return "Choose which screens get the paper treatment."
-        case .appRules: return "Let your paper follow the way you work."
-        case .settings: return "Launch, capture privacy, and updates — all in one place."
+        case .grain: return L("Tune the size and presence of your paper's grain.")
+        case .snooze: return L("A bare screen for a while. Your paper returns automatically.")
+        case .displays: return L("Choose which screens get the paper treatment.")
+        case .appRules: return L("Let your paper follow the way you work.")
+        case .settings: return L("Launch, capture privacy, and updates — all in one place.")
         }
     }
 
@@ -68,7 +68,7 @@ struct QuickControlsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            StudioBanner(eyebrow: "Controls / " + selectedTab.rawValue, title: pageTitle,
+            StudioBanner(eyebrow: L("Controls / ") + L(selectedTab.rawValue), title: pageTitle,
                          detail: pageDetail, symbol: selectedTab.icon, color: pageColor)
 
             // Every destination fits without a hidden last tab or decorative overflow fade.
@@ -77,7 +77,8 @@ struct QuickControlsView: View {
                     Button { selectedTab = tab } label: {
                         VStack(spacing: 5) {
                             Image(systemName: tab.icon).font(.system(size: 14, weight: .medium))
-                            Text(tab.rawValue).font(.system(size: 9, weight: .medium)).lineLimit(1)
+                            Text(L(tab.rawValue)).font(.system(size: 9, weight: .medium))
+                                .lineLimit(1).minimumScaleFactor(0.7)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -107,7 +108,7 @@ struct QuickControlsView: View {
             .background(StudioStyle.panel, in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.07)))
             if !state.isEnabled && (selectedTab == .grain || selectedTab == .appRules || selectedTab == .snooze) {
-                Label("Enable paper on Your desk to adjust these controls.", systemImage: "pause.circle")
+                Label(L("Enable paper on Your desk to adjust these controls."), systemImage: "pause.circle")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
             }
         }
@@ -121,18 +122,18 @@ struct QuickControlsView: View {
             // Scale Segmented Picker
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Grain Scale")
+                    Text(L("Grain Scale"))
                         .font(.system(size: 12, weight: .semibold))
                     Spacer()
-                    Text(grainScaleLabel)
+                    Text(L(grainScaleLabel))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
 
                 StudioSegmentedPicker(options: [
-                    ("Fine", 0.5), ("Normal", 1.0), ("Coarse", 2.0), ("Grainy", 4.0)
+                    (L("Fine"), 0.5), (L("Normal"), 1.0), (L("Coarse"), 2.0), (L("Grainy"), 4.0)
                 ], selection: $state.grainScale)
-                .accessibilityLabel("Grain scale")
+                .accessibilityLabel(L("Grain scale"))
             }
 
             Divider()
@@ -140,7 +141,7 @@ struct QuickControlsView: View {
             // Strength Slider
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Grain Visibility")
+                    Text(L("Grain Visibility"))
                         .font(.system(size: 12, weight: .semibold))
                     Spacer()
                     Text("\(Int(state.grainStrength * 100))%")
@@ -154,8 +155,8 @@ struct QuickControlsView: View {
 
                 Slider(value: $state.grainStrength, in: 0.25...2.0)
                     .tint(StudioStyle.rust)
-                    .accessibilityLabel("Grain visibility")
-                    .accessibilityValue("\(Int(state.grainStrength * 100)) percent")
+                    .accessibilityLabel(L("Grain visibility"))
+                    .accessibilityValue(LF("%@ percent", String(Int(state.grainStrength * 100))))
             }
         }
         .disabled(!state.isEnabled)
@@ -163,10 +164,10 @@ struct QuickControlsView: View {
 
     private var grainScaleLabel: String {
         switch state.grainScale {
-        case 0.5: return "0.5× (Fine)"
-        case 1.0: return "1.0× (Standard)"
-        case 2.0: return "2.0× (Coarse)"
-        case 4.0: return "4.0× (Heavy)"
+        case 0.5: return L("0.5× (Fine)")
+        case 1.0: return L("1.0× (Standard)")
+        case 2.0: return L("2.0× (Coarse)")
+        case 4.0: return L("4.0× (Heavy)")
         default: return String(format: "%.1f×", state.grainScale)
         }
     }
@@ -178,11 +179,11 @@ struct QuickControlsView: View {
             if state.isSnoozed, let until = state.snoozeUntil {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Currently Snoozed")
+                        Text(L("Currently Snoozed"))
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(.orange)
                         HStack(spacing: 4) {
-                            Text("Resuming in")
+                            Text(L("Resuming in"))
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                             Text(timerInterval: Date()...until, countsDown: true)
@@ -193,7 +194,7 @@ struct QuickControlsView: View {
 
                     Spacer()
 
-                    Button("Resume Now") {
+                    Button(L("Resume Now")) {
                         state.cancelSnooze()
                         state.isEnabled = true
                     }
@@ -202,7 +203,7 @@ struct QuickControlsView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Temporarily hide overlay:")
+                    Text(L("Temporarily hide overlay:"))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
 
@@ -213,7 +214,7 @@ struct QuickControlsView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("\(minutes >= 60 ? minutes / 60 : minutes)")
                                             .font(.system(size: 23, weight: .semibold, design: .rounded))
-                                        Text(minutes >= 60 ? (minutes == 60 ? "hour" : "hours") : "minutes")
+                                        Text(minutes >= 60 ? (minutes == 60 ? L("hour") : L("hours")) : L("minutes"))
                                             .font(.system(size: 10)).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -235,7 +236,7 @@ struct QuickControlsView: View {
 
     private var displaysControls: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Active Displays")
+            Text(L("Active Displays"))
                 .font(.system(size: 12, weight: .semibold))
 
             ForEach(NSScreen.screens, id: \.self) { screen in
@@ -274,15 +275,15 @@ struct QuickControlsView: View {
     private var appRulesControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             StudioSegmentedPicker(options: [
-                ("Everywhere", AppState.AppRuleMode.everywhere),
-                ("Except…", .except),
-                ("Only…", .only)
+                (L("Everywhere"), AppState.AppRuleMode.everywhere),
+                (L("Except…"), .except),
+                (L("Only…"), .only)
             ], selection: $state.appRuleMode)
-            .accessibilityLabel("Where the paper shows")
+            .accessibilityLabel(L("Where the paper shows"))
 
             if state.appRuleMode != .everywhere {
                 if state.ruleApps.isEmpty {
-                    Text("No applications configured yet.")
+                    Text(L("No applications configured yet."))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 } else {
@@ -301,7 +302,7 @@ struct QuickControlsView: View {
                                             .font(.system(size: 12))
                                     }
                                     .buttonStyle(.plain)
-                                    .accessibilityLabel("Remove \(app.name)")
+                                    .accessibilityLabel(LF("Remove %@", app.name))
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -314,14 +315,14 @@ struct QuickControlsView: View {
                 }
 
                 HStack {
-                    Button("Add App…") { addRuleApp() }
+                    Button(L("Add App…")) { addRuleApp() }
                         .controlSize(.small)
 
                     Spacer()
 
                     Text(state.appRuleMode == .except
-                         ? "Hides in listed apps"
-                         : "Shows only in listed apps")
+                         ? L("Hides in listed apps")
+                         : L("Shows only in listed apps"))
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -335,7 +336,7 @@ struct QuickControlsView: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowedContentTypes = [.applicationBundle]
         panel.allowsMultipleSelection = true
-        panel.message = "Choose apps for the rule list"
+        panel.message = L("Choose apps for the rule list")
         guard panel.runModal() == .OK else { return }
         for url in panel.urls {
             guard let bundle = Bundle(url: url), let id = bundle.bundleIdentifier else { continue }
@@ -352,6 +353,16 @@ struct QuickControlsView: View {
 
     private var settingsControls: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Picker(L("Language"), selection: $state.language) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.label).tag(language)
+                }
+            }
+            .pickerStyle(.menu)
+            .font(.system(size: 12))
+
+            Divider()
+
             // App version and update status row
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -359,7 +370,7 @@ struct QuickControlsView: View {
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
                         .foregroundStyle(.primary)
 
-                    Text("Paper for your Mac · macOS 13+")
+                    Text(L("Paper for your Mac · macOS 13+"))
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
@@ -375,17 +386,17 @@ struct QuickControlsView: View {
             // macOS offers no guaranteed capture opt-out: system screenshots
             // honour sharingType .none, but ScreenCaptureKit apps may not
             // (Apple DTS, developer forums thread 792152).
-            Toggle("Hide from macOS screenshots", isOn: $state.hideFromCapture)
+            Toggle(L("Hide from macOS screenshots"), isOn: $state.hideFromCapture)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
-                .help("Screenshots and recordings made with macOS leave the texture out. Some screen-sharing and recording apps can still capture it.")
+                .help(L("Screenshots and recordings made with macOS leave the texture out. Some screen-sharing and recording apps can still capture it."))
 
-            Toggle("Launch automatically at login", isOn: launchAtLoginBinding)
+            Toggle(L("Launch automatically at login"), isOn: launchAtLoginBinding)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
                 .disabled(!isBundled)
 
-            Toggle("Install updates automatically", isOn: $updater.autoInstall)
+            Toggle(L("Install updates automatically"), isOn: $updater.autoInstall)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
 
@@ -404,7 +415,7 @@ struct QuickControlsView: View {
                             ProgressView()
                                 .controlSize(.mini)
                         }
-                        Text(updateButtonTitle)
+                        Text(L(updateButtonTitle))
                     }
                 }
                 .controlSize(.small)
@@ -412,7 +423,7 @@ struct QuickControlsView: View {
 
                 Spacer()
 
-                Button("Quit Deckle") {
+                Button(L("Quit Deckle")) {
                     NSApp.terminate(nil)
                 }
                 .controlSize(.small)
@@ -428,7 +439,7 @@ struct QuickControlsView: View {
         case .checking:
             HStack(spacing: 4) {
                 ProgressView().controlSize(.mini)
-                Text("Checking…")
+                Text(L("Checking…"))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
             }
@@ -436,7 +447,7 @@ struct QuickControlsView: View {
             HStack(spacing: 3) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                Text("Up to date")
+                Text(L("Up to date"))
                     .foregroundStyle(.secondary)
             }
             .font(.system(size: 10, weight: .medium))
@@ -444,22 +455,22 @@ struct QuickControlsView: View {
             HStack(spacing: 3) {
                 Image(systemName: "arrow.down.circle.fill")
                     .foregroundStyle(Color.accentColor)
-                Text("v\(version) ready")
+                Text(LF("v%@ ready", version))
                     .foregroundStyle(Color.accentColor)
             }
             .font(.system(size: 10, weight: .bold))
         case .installing:
             HStack(spacing: 4) {
                 ProgressView().controlSize(.mini)
-                Text("Installing…")
+                Text(L("Installing…"))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(Color.accentColor)
             }
         case .failed(let message):
-            Text("Update issue")
+            Text(L("Update issue"))
                 .font(.system(size: 10))
                 .foregroundStyle(.orange)
-                .help(message)
+                .help(localizedUpdateMessage(message))
         case .idle:
             EmptyView()
         }
@@ -467,12 +478,12 @@ struct QuickControlsView: View {
 
     private var updateButtonTitle: String {
         switch updater.status {
-        case .checking: return "Checking…"
-        case .installing: return "Installing…"
-        case .available: return "Install Update"
-        case .upToDate: return "Check Again"
-        case .failed: return "Retry Check"
-        case .idle: return "Check for Updates"
+        case .checking: return L("Checking…")
+        case .installing: return L("Installing…")
+        case .available: return L("Install Update")
+        case .upToDate: return L("Check Again")
+        case .failed: return L("Retry Check")
+        case .idle: return L("Check for Updates")
         }
     }
 

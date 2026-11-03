@@ -34,20 +34,20 @@ struct MenuView: View {
         VStack(spacing: 12) {
             topHeaderBar
             HStack(spacing: 0) {
-                studioTab("Your desk", selected: mode == .desk && !isDetailsExpanded) {
+                studioTab(L("Your desk"), selected: mode == .desk && !isDetailsExpanded) {
                     state.isComparingOriginal = false
                     searchText = ""
                     isShowingAllPapers = false
                     mode = .desk
                     isDetailsExpanded = false
                 }
-                studioTab("Library", selected: mode == .library && !isDetailsExpanded) {
+                studioTab(L("Library"), selected: mode == .library && !isDetailsExpanded) {
                     state.isComparingOriginal = false
                     isShowingAllPapers = true
                     mode = .library
                     isDetailsExpanded = false
                 }
-                studioTab("Pets", selected: mode == .pets && !isDetailsExpanded) {
+                studioTab(L("Pets"), selected: mode == .pets && !isDetailsExpanded) {
                     state.isComparingOriginal = false
                     searchText = ""
                     mode = .pets
@@ -117,9 +117,10 @@ struct MenuView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Deckle")
                     .font(.system(size: 25, weight: .heavy, design: .rounded))
-                Text("LESS GLASS. MORE FEELING.")
+                Text(L("LESS GLASS. MORE FEELING."))
                     .font(.system(size: 8, weight: .medium, design: .monospaced))
                     .tracking(1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -127,12 +128,13 @@ struct MenuView: View {
                 state.isComparingOriginal = false
                 PaperMill.shared.toggle()
             } label: {
-                Label(mill.isOpen ? "Close Mill" : "Paper Mill", systemImage: "scissors")
+                Label(mill.isOpen ? L("Close Mill") : L("Paper Mill"), systemImage: "scissors")
                     .font(.system(size: 11, weight: .medium))
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("Create and edit custom papers")
+            .help(L("Create and edit custom papers"))
             Button {
                 state.isComparingOriginal = false
                 isDetailsExpanded.toggle()
@@ -149,8 +151,8 @@ struct MenuView: View {
                     }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isDetailsExpanded ? "Close controls" : "Controls and settings")
-            .help("Grain, snooze, displays, app rules and settings")
+            .accessibilityLabel(isDetailsExpanded ? L("Close controls") : L("Controls and settings"))
+            .help(L("Grain, snooze, displays, app rules and settings"))
         }
     }
 
@@ -176,7 +178,7 @@ struct MenuView: View {
                 .foregroundStyle(isSearchFocused ? Color.accentColor : .secondary)
                 .accessibilityHidden(true)
 
-            TextField("Search all papers & textures…", text: $searchText)
+            TextField(L("Search all papers & textures…"), text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .focused($isSearchFocused)
@@ -196,8 +198,8 @@ struct MenuView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .help("Clear search")
-                .accessibilityLabel("Clear search")
+                .help(L("Clear search"))
+                .accessibilityLabel(L("Clear search"))
             }
         }
         .padding(.horizontal, 10)
@@ -232,11 +234,11 @@ struct MenuView: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Deckle \(version) is available")
+                Text(LF("Deckle %@ is available", version))
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.primary)
 
-                Text("A new version is ready to install.")
+                Text(L("A new version is ready to install."))
                     .font(.system(size: 11, weight: .regular))
                     .foregroundStyle(.secondary)
             }
@@ -246,7 +248,7 @@ struct MenuView: View {
             Button(action: {
                 updater.installLatest(userInitiated: true)
             }) {
-                Text("Update")
+                Text(L("Update"))
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
@@ -270,8 +272,8 @@ struct MenuView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .help("Dismiss notification")
-            .accessibilityLabel("Dismiss update notice")
+            .help(L("Dismiss notification"))
+            .accessibilityLabel(L("Dismiss update notice"))
         }
         .padding(12)
         .background(
@@ -291,9 +293,9 @@ struct MenuView: View {
                 .controlSize(.small)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Installing update…")
+                Text(L("Installing update…"))
                     .font(.system(size: 12, weight: .semibold))
-                Text("Deckle will relaunch automatically.")
+                Text(L("Deckle will relaunch automatically."))
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
@@ -326,7 +328,7 @@ struct MenuView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(message)
+                Text(localizedUpdateMessage(message))
                     .font(.system(size: 11, weight: .regular))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -334,7 +336,7 @@ struct MenuView: View {
                 // Offer the manual download only when an update genuinely
                 // exists; a network blip shouldn't advertise releases.
                 if updater.latestKnownVersion != nil {
-                    Button("Open release page") {
+                    Button(L("Open release page")) {
                         updater.openReleases()
                     }
                     .buttonStyle(.plain)
@@ -361,8 +363,8 @@ struct MenuView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .help("Dismiss")
-            .accessibilityLabel("Dismiss update message")
+            .help(L("Dismiss"))
+            .accessibilityLabel(L("Dismiss update message"))
         }
         .padding(12)
         .background(
@@ -389,15 +391,15 @@ struct MenuView: View {
                         .background(Color.primary.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                    Text(HotKey.isRegistered ? "toggles anywhere" : "unavailable")
+                    Text(HotKey.isRegistered ? L("toggles anywhere") : L("unavailable"))
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityAddTraits(.isStaticText)
                 .accessibilityLabel(HotKey.isRegistered
-                                    ? "Option Command P toggles the paper from any app"
-                                    : "The Option Command P shortcut is unavailable")
+                                    ? L("Option Command P toggles the paper from any app")
+                                    : L("The Option Command P shortcut is unavailable"))
 
                 Spacer()
 
@@ -410,7 +412,7 @@ struct MenuView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
 
-                    Button("Quit") {
+                    Button(L("Quit")) {
                         NSApp.terminate(nil)
                     }
                     .buttonStyle(.plain)
