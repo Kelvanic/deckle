@@ -4,6 +4,10 @@ import Foundation
 struct DeskSetup: Codable, Equatable, Identifiable {
     var id = UUID()
     var name: String
+    /// Only new built-in starters carry a translation key. User names and
+    /// historical saved names are displayed exactly as they were entered.
+    var nameLocalizationKey: String?
+    var displayName: String { nameLocalizationKey.map { L($0) } ?? name }
     var textureID: String
     var intensity: Double
     var grainScale: Double
@@ -11,9 +15,10 @@ struct DeskSetup: Codable, Equatable, Identifiable {
     var matteStrength: Double
 
     init(id: UUID = UUID(), name: String, textureID: String, intensity: Double,
-         grainScale: Double, grainStrength: Double, matteStrength: Double = 0) {
+         grainScale: Double, grainStrength: Double, matteStrength: Double = 0, nameLocalizationKey: String? = nil) {
         self.id = id
         self.name = name
+        self.nameLocalizationKey = nameLocalizationKey
         self.textureID = textureID
         self.intensity = intensity
         self.grainScale = grainScale
@@ -22,13 +27,14 @@ struct DeskSetup: Codable, Equatable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, textureID, intensity, grainScale, grainStrength, matteStrength
+        case id, name, nameLocalizationKey, textureID, intensity, grainScale, grainStrength, matteStrength
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try container.decode(String.self, forKey: .name)
+        nameLocalizationKey = try container.decodeIfPresent(String.self, forKey: .nameLocalizationKey)
         textureID = try container.decode(String.self, forKey: .textureID)
         intensity = try container.decode(Double.self, forKey: .intensity)
         grainScale = try container.decode(Double.self, forKey: .grainScale)
@@ -41,6 +47,7 @@ struct DeskSetup: Codable, Equatable, Identifiable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(nameLocalizationKey, forKey: .nameLocalizationKey)
         try container.encode(textureID, forKey: .textureID)
         try container.encode(intensity, forKey: .intensity)
         try container.encode(grainScale, forKey: .grainScale)
@@ -49,9 +56,9 @@ struct DeskSetup: Codable, Equatable, Identifiable {
     }
 
     static let starters: [DeskSetup] = [
-        DeskSetup(name: "Read", textureID: "book-cream", intensity: 0.22, grainScale: 1, grainStrength: 1),
-        DeskSetup(name: "Write", textureID: "clear-veil", intensity: 0.18, grainScale: 1, grainStrength: 1),
-        DeskSetup(name: "Unwind", textureID: "evening-shade", intensity: 0.22, grainScale: 1, grainStrength: 1)
+        DeskSetup(name: "Read", textureID: "book-cream", intensity: 0.22, grainScale: 1, grainStrength: 1, nameLocalizationKey: "Read"),
+        DeskSetup(name: "Write", textureID: "clear-veil", intensity: 0.18, grainScale: 1, grainStrength: 1, nameLocalizationKey: "Write"),
+        DeskSetup(name: "Unwind", textureID: "evening-shade", intensity: 0.22, grainScale: 1, grainStrength: 1, nameLocalizationKey: "Unwind")
     ]
 
     var hasValidSettings: Bool {

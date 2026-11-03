@@ -337,6 +337,10 @@ final class PaperMill: NSObject, NSWindowDelegate, ObservableObject {
         }
     }
 
+    func updateLanguage(isNew: Bool) {
+        window?.title = L(isNew ? "New Paper" : "Edit Paper")
+    }
+
     func close() {
         AppState.shared.previewPaper = nil
         window?.close()
@@ -639,6 +643,9 @@ struct PaperMillView: View {
         }
         .tint(StudioStyle.rust)
         .frame(minWidth: 400, maxWidth: 600, minHeight: 500, maxHeight: 800)
+        .onChange(of: state.language) { _ in
+            PaperMill.shared.updateLanguage(isNew: isNew)
+        }
         .onChange(of: previewPreset) { _ in
             schedulePreviewPush()
         }

@@ -470,7 +470,7 @@ struct QuickControlsView: View {
             Text(L("Update issue"))
                 .font(.system(size: 10))
                 .foregroundStyle(.orange)
-                .help(message)
+                .help(localizedUpdateMessage(message))
         case .idle:
             EmptyView()
         }

@@ -1,9 +1,12 @@
+// UI copy reviewed for paper-texture terminology and control labels.
 "%@ degrees" = "%@ degrees";
+"%@ files weren't Deckle papers" = "%@ files weren't Deckle papers";
 "%@ is on your desk" = "%@ is on your desk";
 "%@ is waiting in the menu" = "%@ is waiting in the menu";
 "%@ percent" = "%@ percent";
 "%@, %@, preview" = "%@, %@, preview";
 "0.5× (Fine)" = "0.5× (Fine)";
+"1 file wasn't a Deckle paper" = "1 file wasn't a Deckle paper";
 "1.0× (Standard)" = "1.0× (Standard)";
 "2.0× (Coarse)" = "2.0× (Coarse)";
 "22%\nSAMPLE" = "22%\nSAMPLE";
@@ -43,6 +46,7 @@
 "Choose .decklepaper.json files" = "Choose .decklepaper.json files";
 "Choose apps for the rule list" = "Choose apps for the rule list";
 "Choose which screens get the paper treatment." = "Choose which screens get the paper treatment.";
+"Classic warm laid stock" = "Classic warm laid stock";
 "Clear" = "Clear";
 "Clear Search" = "Clear Search";
 "Clear Veil" = "Clear Veil";
@@ -61,6 +65,7 @@
 "Cool blue-gray with woven fiber alignment" = "Cool blue-gray with woven fiber alignment";
 "Cool gray daily-paper stock" = "Cool gray daily-paper stock";
 "Cool pale blue" = "Cool pale blue";
+"Couldn't export “%@”" = "Couldn't export “%@”";
 "Couldn't find the update download on GitHub releases." = "Couldn't find the update download on GitHub releases.";
 "Couldn't reach GitHub" = "Couldn't reach GitHub";
 "Create" = "Create";
@@ -75,7 +80,10 @@
 "Dark" = "Dark";
 "Dark paper" = "Dark paper";
 "Deckle %@ is available" = "Deckle %@ is available";
+"Deckle can't write to this folder. Move it to ~/Applications, or install the update manually." = "Deckle can't write to this folder. Move it to ~/Applications, or install the update manually.";
+"Deckle isn't running as an app bundle. Install Deckle.app in /Applications or ~/Applications, then reopen it." = "Deckle isn't running as an app bundle. Install Deckle.app in /Applications or ~/Applications, then reopen it.";
 "Deckle will relaunch automatically." = "Deckle will relaunch automatically.";
+"Deep amber, strongest blue cut" = "Deep amber, strongest blue cut";
 "Deep slate with visible fiber strands" = "Deep slate with visible fiber strands";
 "Deeper dimming, minimal texture" = "Deeper dimming, minimal texture";
 "Delete" = "Delete";
@@ -89,6 +97,7 @@
 "Displays" = "Displays";
 "Drifts in slow loops, darts, nibbles, dozes, loops the loop, and rolls like a folded card." = "Drifts in slow loops, darts, nibbles, dozes, loops the loop, and rolls like a folded card.";
 "Duplicate in Paper Mill…" = "Duplicate in Paper Mill…";
+"Echo paper companion" = "Echo paper companion";
 "Edit Paper" = "Edit Paper";
 "Edit in Paper Mill…" = "Edit in Paper Mill…";
 "Enable paper" = "Enable paper";
@@ -101,6 +110,7 @@
 "Excellent retention" = "Excellent retention";
 "Except…" = "Except…";
 "Export Paper…" = "Export Paper…";
+"Eyes follow your cursor. Activate to squish the dotted rings." = "Eyes follow your cursor. Activate to squish the dotted rings.";
 "Faint warmth, barely-there grain" = "Faint warmth, barely-there grain";
 "Feather-light, near invisible" = "Feather-light, near invisible";
 "Felt Side" = "Felt Side";
@@ -112,6 +122,7 @@
 "Fine ribbed cotton sheet" = "Fine ribbed cotton sheet";
 "Finish your Paper Mill preview to use desk setups." = "Finish your Paper Mill preview to use desk setups.";
 "Fish" = "Fish";
+"Focus" = "Focus";
 "Foxed Amber" = "Foxed Amber";
 "Frost Glassine" = "Frost Glassine";
 "Gesso Ground" = "Gesso Ground";
@@ -120,8 +131,8 @@
 "Grain" = "Grain";
 "Grain Scale" = "Grain Scale";
 "Grain Visibility" = "Grain Visibility";
-"Grain scale" = "Grain scale";
-"Grain visibility" = "Grain visibility";
+"Grain scale" = "Grain Scale";
+"Grain visibility" = "Grain Visibility";
 "Grain, snooze, displays, app rules and settings" = "Grain, snooze, displays, app rules and settings";
 "Grainy" = "Grainy";
 "Ground-ink black" = "Ground-ink black";
@@ -162,12 +173,14 @@
 "My Papers" = "My Papers";
 "Name" = "Name";
 "Name this setup" = "Name this setup";
+"Near-neutral, keeps text crispest" = "Near-neutral, keeps text crispest";
 "Neutral" = "Neutral";
 "Neutral dimming, no grain" = "Neutral dimming, no grain";
 "New Paper" = "New Paper";
 "New Paper…" = "New Paper…";
-"New paper" = "New paper";
+"New paper" = "New Paper";
 "Newsprint" = "Newsprint";
+"Night" = "Night";
 "No applications configured yet." = "No applications configured yet.";
 "No grain" = "No grain";
 "No papers found" = "No papers found";
@@ -179,6 +192,7 @@
 "Open release page" = "Open release page";
 "Option Command P toggles the paper from any app" = "Option Command P toggles the paper from any app";
 "PAPER\nSAMPLE" = "PAPER\nSAMPLE";
+"Paper" = "Paper";
 "Paper + finish" = "Paper + finish";
 "Paper Mill" = "Paper Mill";
 "Paper Mill / Edit paper" = "Paper Mill / Edit paper";
@@ -208,6 +222,7 @@
 "Quit" = "Quit";
 "Quit Deckle" = "Quit Deckle";
 "Read" = "Read";
+"Reading" = "Reading";
 "Recycled Kraft" = "Recycled Kraft";
 "Reduced contrast" = "Reduced contrast";
 "Remove %@" = "Remove %@";
@@ -268,12 +283,14 @@
 "Up to date" = "Up to date";
 "Update" = "Update";
 "Update download looked wrong; not installing" = "Update download looked wrong; not installing";
+"Update failed — %@" = "Update failed — %@";
 "Update issue" = "Update issue";
 "Veil Alpha" = "Veil Alpha";
 "Waiting" = "Waiting";
 "Wanders the bottom of the screen: sits, grooms, looks around, naps, pounces, and chases its tail." = "Wanders the bottom of the screen: sits, grooms, looks around, naps, pounces, and chases its tail.";
 "Warm" = "Warm";
 "Warm near-black roast" = "Warm near-black roast";
+"Warm off-white for long sessions" = "Warm off-white for long sessions";
 "Warm parchment with coarse tooth" = "Warm parchment with coarse tooth";
 "Wash" = "Wash";
 "Weave" = "Weave";
@@ -283,19 +300,9 @@
 "Your desk" = "Your desk";
 "hour" = "hour";
 "hours" = "hours";
+"macOS is running Deckle from a protected download location. Move it to /Applications or ~/Applications, then try again." = "macOS is running Deckle from a protected download location. Move it to /Applications or ~/Applications, then try again.";
 "minutes" = "minutes";
 "toggles anywhere" = "toggles anywhere";
 "unavailable" = "unavailable";
 "v%@ ready" = "v%@ ready";
 "简体中文" = "简体中文";
-"Focus" = "Focus";
-"Reading" = "Reading";
-"Paper" = "Paper";
-"Night" = "Night";
-"Near-neutral, keeps text crispest" = "Near-neutral, keeps text crispest";
-"Warm off-white for long sessions" = "Warm off-white for long sessions";
-"Classic warm laid stock" = "Classic warm laid stock";
-"Deep amber, strongest blue cut" = "Deep amber, strongest blue cut";
-"Couldn't export “%@”" = "Couldn't export “%@”";
-"%@ files weren't Deckle papers" = "%@ files weren't Deckle papers";
-"1 file wasn't a Deckle paper" = "1 file wasn't a Deckle paper";

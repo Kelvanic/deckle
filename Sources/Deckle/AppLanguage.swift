@@ -59,3 +59,12 @@ func L(_ key: String, language: AppLanguage = .current) -> String {
 func LF(_ key: String, _ arguments: CVarArg...) -> String {
     String(format: L(key), locale: Locale(identifier: AppLanguage.current.rawValue), arguments: arguments)
 }
+
+/// Status stores English messages so an open failure banner can change language.
+func localizedUpdateMessage(_ message: String) -> String {
+    let prefix = "Update failed — "
+    if message.hasPrefix(prefix) {
+        return LF("Update failed — %@", String(message.dropFirst(prefix.count)))
+    }
+    return L(message)
+}

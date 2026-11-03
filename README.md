@@ -133,7 +133,7 @@ Or `make run` to build and launch it from `dist/` without installing. Local buil
 
 Open Controls and settings → Settings → Language to choose English, 简体中文, 繁體中文, 日本語, 한국어, Français, Deutsch, Español, Português (Brasil), Italiano, or Русский. The change applies immediately and is remembered after relaunch. Built-in paper names and descriptions are translated for display, while saved paper IDs and custom paper names stay stable.
 
-The nine additional language catalogs start with machine translations and welcome native-speaker review.
+The language catalogs have received an AI-assisted editorial pass for UI terminology and paper-material descriptions. Native-speaker feedback is still welcome. New built-in desk setups have translated display names. Previously saved names and user-created names stay as entered.
 
 ## How it works
 

@@ -6,11 +6,15 @@ import SwiftUI
 /// the reference's parameters and its 60 Hz phase-step convention.
 struct PaperBallView: NSViewRepresentable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.locale) private var locale
     @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context: Context) -> EchoBallView { EchoBallView() }
 
     func updateNSView(_ view: EchoBallView, context: Context) {
+        let language = AppLanguage(rawValue: locale.identifier) ?? .current
+        view.setAccessibilityLabel(L("Echo paper companion", language: language))
+        view.setAccessibilityHelp(L("Eyes follow your cursor. Activate to squish the dotted rings.", language: language))
         view.reducedMotion = reduceMotion
         view.lightInk = colorScheme == .dark
     }

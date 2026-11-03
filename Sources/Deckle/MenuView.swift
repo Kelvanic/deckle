@@ -120,6 +120,7 @@ struct MenuView: View {
                 Text(L("LESS GLASS. MORE FEELING."))
                     .font(.system(size: 8, weight: .medium, design: .monospaced))
                     .tracking(1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -129,6 +130,7 @@ struct MenuView: View {
             } label: {
                 Label(mill.isOpen ? L("Close Mill") : L("Paper Mill"), systemImage: "scissors")
                     .font(.system(size: 11, weight: .medium))
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -326,7 +328,7 @@ struct MenuView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(message)
+                Text(localizedUpdateMessage(message))
                     .font(.system(size: 11, weight: .regular))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)

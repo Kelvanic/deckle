@@ -50,7 +50,7 @@ struct DeskSetupsView: View {
                                         .font(.system(size: 9, design: .monospaced))
                                 }
                                 .foregroundStyle(selected ? StudioStyle.rust : .secondary)
-                                Text(setup.name).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                                Text(setup.displayName).font(.system(size: 12, weight: .medium)).lineLimit(1)
                                 Text(available ? L("Paper + finish") : L("Paper missing"))
                                     .font(.system(size: 9)).foregroundStyle(.secondary)
                             }
@@ -64,7 +64,7 @@ struct DeskSetupsView: View {
                         .buttonStyle(StudioButtonStyle())
                         .accessibilityAddTraits(selected ? .isSelected : [])
                         .disabled(!available || state.previewPaper != nil)
-                        .help(available ? LF("Apply %@: paper, intensity, grain and matte", setup.name) : L("The paper used by this setup was deleted"))
+                        .help(available ? LF("Apply %@: paper, intensity, grain and matte", setup.displayName) : L("The paper used by this setup was deleted"))
                         .contextMenu {
                             Button(L("Remove setup"), role: .destructive) {
                                 state.deskSetups.removeAll { $0.id == setup.id }

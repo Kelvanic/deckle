@@ -48,12 +48,12 @@ struct ModernPresetCard: View {
                     Text(preset.displayName)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.85))
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(L(tagText))
                         .font(.system(size: 10, weight: .regular))
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 2)
             }
@@ -113,7 +113,7 @@ struct ModernPresetCard: View {
         } else if preset.weave != nil {
             return L("Woven")
         } else {
-            return preset.subtitle.components(separatedBy: ",").first ?? L("Smooth")
+            return preset.displaySubtitle
         }
     }
 }

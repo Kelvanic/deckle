@@ -43,17 +43,18 @@ struct HeroCardView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(state.texture.displayName)
                             .font(.system(size: 14, weight: .semibold))
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                         Text(state.texture.displaySubtitle)
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 0)
                     Text(state.texture.isQuietReading ? L("22%\nSAMPLE") : L("PAPER\nSAMPLE"))
                         .font(.system(size: 8, weight: .medium, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: true, vertical: true)
                 }
                 .padding(12)
                 .background(StudioStyle.panel)
