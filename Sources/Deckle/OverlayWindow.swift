@@ -50,6 +50,21 @@ final class OverlayWindow: NSPanel {
         didSet { compositor?.setAlpha(alphaValue) }
     }
 
+    private var previewRegions: [CGRect] = []
+    func setPreviewRegions(_ regions: [CGRect]) {
+        guard previewRegions != regions else { return }
+        previewRegions = regions
+        if let compositor { compositor.setPreviewRegions(regions); return }
+        guard !regions.isEmpty else { textureView.layer?.mask = nil; return }
+        let path = CGMutablePath()
+        path.addRect(textureView.bounds)
+        for region in regions { path.addRect(region) }
+        let mask = CAShapeLayer()
+        mask.path = path
+        mask.fillRule = .evenOdd
+        textureView.layer?.mask = mask
+    }
+
     func setIntensity(_ value: CGFloat) {
         fadeTimer?.invalidate()
         fadeTimer = nil
