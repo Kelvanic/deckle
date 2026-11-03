@@ -112,6 +112,7 @@ final class OverlayController {
                 } else {
                     window.alphaValue = 0
                     window.orderFrontRegardless()
+                    OverlaySpace.shared?.attach(window)
                     NSAnimationContext.runAnimationGroup { context in
                         context.duration = 0.4
                         window.animator().alphaValue = CGFloat(state.intensity)

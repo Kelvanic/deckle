@@ -2,13 +2,13 @@ import AppKit
 
 /// A borderless, transparent, click-through window that sits above everything
 /// (including the menu bar) and simply draws the paper texture.
-final class OverlayWindow: NSWindow {
+final class OverlayWindow: NSPanel {
     private let textureView = TextureView()
 
     init(screen: NSScreen) {
         super.init(
             contentRect: screen.frame,
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -16,14 +16,16 @@ final class OverlayWindow: NSWindow {
         backgroundColor = .clear
         hasShadow = false
         ignoresMouseEvents = true
+        hidesOnDeactivate = false
         isReleasedWhenClosed = false
         animationBehavior = .none
-        // Above the menu bar and normal fullscreen content.
         level = .screenSaver
-        // Follow the user to every Space, stay put during Mission Control,
-        // and never show up in the window cycle (Cmd-`).
+        // Join every app's Stage Manager set as well as every Space. The
+        // nonactivating panel stays independent of the app being switched.
+        // Keep it stationary during Mission Control and out of Cmd-`.
         collectionBehavior = [
             .canJoinAllSpaces,
+            .canJoinAllApplications,
             .stationary,
             .fullScreenAuxiliary,
             .ignoresCycle,
