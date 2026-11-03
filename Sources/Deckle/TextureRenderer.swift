@@ -155,8 +155,9 @@ enum TextureRenderer {
     }
 
     /// The overlay tile: grain composited over the preset's tint wash, so a
-    /// single pattern image carries the whole texture. Used as a CALayer
-    /// pattern background — see TextureView for why. Rendered eagerly into a
+    /// single pattern image carries the whole texture. Tiled directly into the
+    /// compositor window, or used as a CALayer background on the fallback path.
+    /// Rendered eagerly into a
     /// full-resolution bitmap (not a lazily-drawn NSImage) so retina displays
     /// get a sharp pattern at the view's actual backing scale.
     static func compositeTile(
