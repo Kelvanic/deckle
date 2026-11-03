@@ -244,8 +244,8 @@ struct PetsView: View {
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
 
     private var motionPausedReason: String? {
-        if reduceMotion { return "Resting in place — Reduce Motion is on." }
-        if lowPower { return "Resting in place while Low Power Mode is on." }
+        if reduceMotion { return L("Resting in place — Reduce Motion is on.") }
+        if lowPower { return L("Resting in place while Low Power Mode is on.") }
         return nil
     }
 
@@ -266,22 +266,22 @@ struct PetsView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Mood").font(.system(size: 12, weight: .semibold))
-                    StudioSegmentedPicker(options: PetMood.allCases.map { ($0.label, $0) },
+                    Text(L("Mood")).font(.system(size: 12, weight: .semibold))
+                    StudioSegmentedPicker(options: PetMood.allCases.map { (L($0.label), $0) },
                                           selection: $state.petMood)
-                    .accessibilityLabel("Pet mood")
+                    .accessibilityLabel(L("Pet mood"))
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Size").font(.system(size: 12, weight: .semibold))
-                    StudioSegmentedPicker(options: PetSize.allCases.map { ($0.label, $0) },
+                    Text(L("Size")).font(.system(size: 12, weight: .semibold))
+                    StudioSegmentedPicker(options: PetSize.allCases.map { (L($0.label), $0) },
                                           selection: $state.petSize)
-                    .accessibilityLabel("Pet size")
+                    .accessibilityLabel(L("Pet size"))
                 }
                 HStack {
-                    Text("Display").font(.system(size: 12, weight: .semibold))
+                    Text(L("Display")).font(.system(size: 12, weight: .semibold))
                     Spacer()
-                    Picker("Display", selection: $state.petDisplayID) {
-                        Text("Main display").tag(String?.none)
+                    Picker(L("Display"), selection: $state.petDisplayID) {
+                        Text(L("Main display")).tag(String?.none)
                         ForEach(NSScreen.screens, id: \.self) { screen in
                             if let id = screen.displayID, !state.excludedDisplays.contains(String(id)) {
                                 Text(screen.localizedName).tag(String?(String(id)))
@@ -304,17 +304,15 @@ struct PetsView: View {
                     state.petsEnabled.toggle()
                 } label: {
                     Label(state.petsEnabled
-                          ? "Hide \(state.petKind.name)"
-                          : "Bring \(state.petKind.name) to my desk",
+                          ? LF("Hide %@", state.petKind.name)
+                          : LF("Bring %@ to my desk", state.petKind.name),
                           systemImage: state.petsEnabled ? "eye.slash" : "pawprint")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(StudioActionStyle(prominent: true))
                 .controlSize(.small)
 
-                Text("Pets are click-through and need no extra permissions. "
-                     + "They honor your display and app-rule settings, and rest "
-                     + "when Reduce Motion or Low Power Mode is on.")
+                Text(L("Pets are click-through and need no extra permissions. They honor your display and app-rule settings, and rest when Reduce Motion or Low Power Mode is on."))
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -335,10 +333,10 @@ struct PetsView: View {
     private var hero: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 5) {
-                Text("DESKTOP PETS")
+                Text(L("DESKTOP PETS"))
                     .font(.system(size: 8, weight: .semibold, design: .monospaced))
                     .tracking(1.4)
-                Text("A little life on your desk.")
+                Text(L("A little life on your desk."))
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .tracking(-0.6)
                     .lineLimit(1)
@@ -351,20 +349,20 @@ struct PetsView: View {
                        motionEnabled: motionPausedReason == nil)
                 .frame(height: 118)
                 .accessibilityElement()
-                .accessibilityLabel("\(state.petKind.name), \(state.petKind.species), preview")
-                .accessibilityValue(state.petsEnabled ? "On your desk" : "Waiting")
+                .accessibilityLabel(LF("%@, %@, preview", state.petKind.name, L(state.petKind.species)))
+                .accessibilityValue(state.petsEnabled ? L("On your desk") : L("Waiting"))
             HStack(spacing: 6) {
                 Circle()
                     .fill(state.petsEnabled ? Color(nsColor: .systemGreen) : .secondary)
                     .frame(width: 6, height: 6)
                     .accessibilityHidden(true)
                 Text(state.petsEnabled
-                     ? "\(state.petKind.name) is on your desk"
-                     : "\(state.petKind.name) is waiting in the menu")
+                     ? LF("%@ is on your desk", state.petKind.name)
+                     : LF("%@ is waiting in the menu", state.petKind.name))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
-                Text("\(state.petMood.label) · \(state.petSize.label)".uppercased())
+                Text("\(L(state.petMood.label)) · \(L(state.petSize.label))".uppercased())
                     .font(.system(size: 8, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
@@ -400,7 +398,7 @@ struct PetsView: View {
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(kind.name).font(.system(size: 13, weight: .semibold))
-                    Text(kind.species).font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text(L(kind.species)).font(.system(size: 10)).foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 4)
                 .padding(.bottom, 4)
@@ -414,8 +412,8 @@ struct PetsView: View {
                             lineWidth: selected ? 2 : 1))
         }
         .buttonStyle(StudioButtonStyle())
-        .accessibilityLabel("\(kind.name), \(kind.species)")
-        .accessibilityHint(kind.behaviorSummary)
+        .accessibilityLabel("\(kind.name), \(L(kind.species))")
+        .accessibilityHint(L(kind.behaviorSummary))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

@@ -348,7 +348,7 @@ final class PaperMill: NSObject, NSWindowDelegate, ObservableObject {
         present(
             draft: paper ?? CustomPaper(),
             isNew: paper == nil,
-            title: paper == nil ? "New Paper" : "Edit Paper"
+            title: paper == nil ? L("New Paper") : L("Edit Paper")
         )
     }
 
@@ -362,7 +362,7 @@ final class PaperMill: NSObject, NSWindowDelegate, ObservableObject {
         present(
             draft: draft,
             isNew: true,
-            title: "New Paper"
+            title: L("New Paper")
         )
     }
 
@@ -478,13 +478,13 @@ struct PaperMillView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                StudioBanner(eyebrow: isNew ? "Paper Mill / New paper" : "Paper Mill / Edit paper",
-                             title: "Make it yours.", detail: "Mix a finish. Try it on your screen. Save when it feels right.",
+                StudioBanner(eyebrow: isNew ? L("Paper Mill / New paper") : L("Paper Mill / Edit paper"),
+                             title: L("Make it yours."), detail: L("Mix a finish. Try it on your screen. Save when it feels right."),
                              symbol: "scissors", color: StudioStyle.lilac)
                 PaperMillThumbnail(preset: previewPreset, isAdjusting: isAdjusting)
                     .equatable()
                     .overlay(alignment: .bottomTrailing) {
-                        Text("UNSAVED DRAFT").font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        Text(L("UNSAVED DRAFT")).font(.system(size: 8, weight: .semibold, design: .monospaced))
                             .tracking(1).padding(7).background(.black.opacity(0.72), in: Capsule())
                             .foregroundStyle(.white).padding(10)
                     }
@@ -494,7 +494,7 @@ struct PaperMillView: View {
                     Button(action: togglePreview) {
                         HStack(spacing: 6) {
                             Image(systemName: isPreviewing ? "eye.slash.fill" : "eye.fill")
-                            Text(isPreviewing ? "Stop Preview" : "Preview on Screen")
+                            Text(isPreviewing ? L("Stop Preview") : L("Preview on Screen"))
                                 .fontWeight(.medium)
                         }
                     }
@@ -503,51 +503,51 @@ struct PaperMillView: View {
                     .keyboardShortcut("p", modifiers: .command)
 
                     Text(isPreviewing
-                         ? "Live on screen — this window is under the overlay too."
-                         : "Renders the draft on every display before you save it.")
+                         ? L("Live on screen — this window is under the overlay too.")
+                         : L("Renders the draft on every display before you save it."))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 // 3. Name Field
-                StudioSectionTitle(number: "01", title: "Give it a name")
-                TextField("Name", text: $draft.name)
+                StudioSectionTitle(number: "01", title: L("Give it a name"))
+                TextField(L("Name"), text: $draft.name)
                     .textFieldStyle(.roundedBorder)
 
                 // 4. Comfort Recipes Row
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("START WITH A RECIPE")
+                    Text(L("START WITH A RECIPE"))
                         .font(.system(size: 9, weight: .medium, design: .monospaced))
                         .tracking(1).foregroundStyle(.secondary)
 
                     HStack(spacing: 6) {
                         ForEach(PaperComfort.recipes) { recipe in
                             Button { recipe.apply(to: &draft) } label: {
-                                Text(recipe.name).font(.system(size: 11, weight: .medium))
+                                Text(L(recipe.name)).font(.system(size: 11, weight: .medium))
                                     .frame(maxWidth: .infinity).padding(.vertical, 8)
                                     .background(StudioStyle.lilac.opacity(0.55), in: Capsule())
                             }
                             .buttonStyle(StudioButtonStyle())
                             .controlSize(.small)
-                            .help(recipe.detail)
+                            .help(L(recipe.detail))
                         }
                     }
                 }
 
                 // Keep the editor controls on one surface; all bindings remain the draft's.
                 VStack(alignment: .leading, spacing: 14) {
-                    StudioSectionTitle(number: "02", title: "Build the texture")
-                    ColorPicker("Tint", selection: tintBinding, supportsOpacity: false)
+                    StudioSectionTitle(number: "02", title: L("Build the texture"))
+                    ColorPicker(L("Tint"), selection: tintBinding, supportsOpacity: false)
 
-                    labeledSlider("Wash", value: $draft.wash, range: 0.10...0.60)
-                    labeledSlider("Weave", value: $draft.weave, range: 0...0.35)
-                    labeledSlider("Blotch", value: $draft.blotch, range: 0...0.40)
+                    labeledSlider(L("Wash"), value: $draft.wash, range: 0.10...0.60)
+                    labeledSlider(L("Weave"), value: $draft.weave, range: 0...0.35)
+                    labeledSlider(L("Blotch"), value: $draft.blotch, range: 0...0.40)
 
                     if draft.engineVersion.usesFiberConfig {
-                        labeledSlider("Fiber Strength", value: fiberStrengthBinding, range: 0...1)
-                        angleSlider("Fiber Angle", value: fiberAngleBinding)
-                        labeledSlider("Surface Roughness", value: surfaceRoughnessBinding, range: 0...1)
+                        labeledSlider(L("Fiber Strength"), value: fiberStrengthBinding, range: 0...1)
+                        angleSlider(L("Fiber Angle"), value: fiberAngleBinding)
+                        labeledSlider(L("Surface Roughness"), value: surfaceRoughnessBinding, range: 0...1)
                     }
 
                 }
@@ -557,11 +557,11 @@ struct PaperMillView: View {
                 // 6. Eye Comfort Evaluation Card
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        StudioSectionTitle(number: "03", title: "Appearance & contrast")
+                        StudioSectionTitle(number: "03", title: L("Appearance & contrast"))
 
                         Spacer()
 
-                        Text(comfort.grade.rawValue)
+                        Text(L(comfort.grade.rawValue))
                             .font(.caption2)
                             .fontWeight(.bold)
                             .foregroundStyle(gradeColor)
@@ -573,20 +573,20 @@ struct PaperMillView: View {
 
                     HStack(spacing: 16) {
                         VStack(alignment: .leading, spacing: 3) {
-                            comfortMetric(label: "Luminance", value: "−\(Int((comfort.dimming * 100).rounded()))%")
-                            comfortMetric(label: "Black/white", value: String(format: "%.1f:1", comfort.contrastRatio))
-                            comfortMetric(label: "Blue channel", value: "−\(Int((comfort.blueReduction * 100).rounded()))%")
+                            comfortMetric(label: L("Luminance"), value: "−\(Int((comfort.dimming * 100).rounded()))%")
+                            comfortMetric(label: L("Black/white"), value: String(format: "%.1f:1", comfort.contrastRatio))
+                            comfortMetric(label: L("Blue channel"), value: "−\(Int((comfort.blueReduction * 100).rounded()))%")
                         }
                         Divider()
                         VStack(alignment: .leading, spacing: 3) {
-                            comfortMetric(label: "Tint Temp", value: "\(Int(comfort.temperature.rounded())) K (\(temperatureDescription))")
-                            comfortMetric(label: "Pattern Load", value: "\(Int((comfort.patternLoad * 100).rounded()))%")
-                            comfortMetric(label: "Fiber Load", value: "\(Int((comfort.fiberLoad * 100).rounded()))%")
-                            comfortMetric(label: "Veil Alpha", value: "\(Int((comfort.veil * 100).rounded()))%")
+                            comfortMetric(label: L("Tint Temp"), value: "\(Int(comfort.temperature.rounded())) K (\(temperatureDescription))")
+                            comfortMetric(label: L("Pattern Load"), value: "\(Int((comfort.patternLoad * 100).rounded()))%")
+                            comfortMetric(label: L("Fiber Load"), value: "\(Int((comfort.fiberLoad * 100).rounded()))%")
+                            comfortMetric(label: L("Veil Alpha"), value: "\(Int((comfort.veil * 100).rounded()))%")
                         }
                     }
 
-                    Text("Tint-wash estimates only; they exclude Matte finish. Grain and actual app colors change the result. These are not eye-health scores.")
+                    Text(L("Tint-wash estimates only; they exclude Matte finish. Grain and actual app colors change the result. These are not eye-health scores."))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -596,7 +596,7 @@ struct PaperMillView: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.system(size: 10))
                                 .foregroundStyle(.orange)
-                            Text("This paper removes over 30% of bare-screen contrast — lower Wash or Intensity for crisper text.")
+                            Text(L("This paper removes over 30% of bare-screen contrast — lower Wash or Intensity for crisper text."))
                                 .font(.caption2)
                                 .foregroundStyle(.orange)
                         }
@@ -609,7 +609,7 @@ struct PaperMillView: View {
                 // 7. Live Intensity Slider
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Intensity")
+                        Text(L("Intensity"))
                             .font(.caption)
                         Spacer()
                         Text("\(Int(state.intensity * 100))%")
@@ -622,9 +622,9 @@ struct PaperMillView: View {
                         in: 0.05...0.45,
                         onEditingChanged: { isAdjusting = $0 }
                     )
-                    .accessibilityLabel("Intensity")
-                    .accessibilityValue("\(Int(state.intensity * 100)) percent")
-                    Text("Shared with the menu — the level this paper will actually be seen at.")
+                    .accessibilityLabel(L("Intensity"))
+                    .accessibilityValue(LF("%@ percent", String(Int(state.intensity * 100))))
+                    Text(L("Shared with the menu — the level this paper will actually be seen at."))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -650,18 +650,18 @@ struct PaperMillView: View {
     private var editorActions: some View {
         HStack {
             if !isNew {
-                Button("Delete", role: .destructive) {
+                Button(L("Delete"), role: .destructive) {
                     stopPreview()
                     AppState.shared.customPapers.removeAll { $0.id == draft.id }
                     dismiss()
                 }
             }
             Spacer()
-            Button("Cancel") {
+            Button(L("Cancel")) {
                 stopPreview()
                 dismiss()
             }
-            Button(isNew ? "Create" : "Save") {
+            Button(isNew ? L("Create") : L("Save")) {
                 stopPreview()
                 var papers = AppState.shared.customPapers
                 if let index = papers.firstIndex(where: { $0.id == draft.id }) {
@@ -687,11 +687,11 @@ struct PaperMillView: View {
 
     private var temperatureDescription: String {
         if comfort.temperature < 3500 {
-            return "Warm"
+            return L("Warm")
         } else if comfort.temperature <= 5000 {
-            return "Neutral"
+            return L("Neutral")
         } else {
-            return "Cool"
+            return L("Cool")
         }
     }
 
@@ -780,7 +780,7 @@ struct PaperMillView: View {
             }
             Slider(value: value, in: range)
                 .accessibilityLabel(label)
-                .accessibilityValue("\(Int(value.wrappedValue * 100)) percent")
+                .accessibilityValue(LF("%@ percent", String(Int(value.wrappedValue * 100))))
         }
     }
 
@@ -795,7 +795,7 @@ struct PaperMillView: View {
             }
             Slider(value: value, in: 0...(Double.pi / 2))
                 .accessibilityLabel(label)
-                .accessibilityValue("\(Int((value.wrappedValue * 180 / .pi).rounded())) degrees")
+                .accessibilityValue(LF("%@ degrees", String(Int((value.wrappedValue * 180 / .pi).rounded()))))
         }
     }
 }
@@ -814,7 +814,7 @@ enum PaperFiles {
         do {
             try encoder.encode(paper).write(to: url, options: .atomic)
         } catch {
-            showError("Couldn't export \u{201C}\(paper.name)\u{201D}", detail: error.localizedDescription)
+            showError(LF("Couldn't export “%@”", paper.name), detail: error.localizedDescription)
         }
     }
 
@@ -822,7 +822,7 @@ enum PaperFiles {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
         panel.allowsMultipleSelection = true
-        panel.message = "Choose .decklepaper.json files"
+        panel.message = L("Choose .decklepaper.json files")
         guard panel.runModal() == .OK else { return }
         var rejected: [String] = []
         for url in panel.urls {
@@ -837,7 +837,7 @@ enum PaperFiles {
         }
         if !rejected.isEmpty {
             showError(
-                rejected.count == 1 ? "1 file wasn't a Deckle paper" : "\(rejected.count) files weren't Deckle papers",
+                rejected.count == 1 ? L("1 file wasn't a Deckle paper") : LF("%@ files weren't Deckle papers", String(rejected.count)),
                 detail: rejected.joined(separator: "\n")
             )
         }

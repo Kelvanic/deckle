@@ -159,7 +159,7 @@ struct StudioSegmentedPicker<Value: Hashable>: View {
             ForEach(options, id: \.value) { option in
                 let selected = option.value == selection
                 Button { selection = option.value } label: {
-                    Text(option.label)
+                    Text(L(option.label))
                         .font(.system(size: 11, weight: selected ? .semibold : .medium))
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)

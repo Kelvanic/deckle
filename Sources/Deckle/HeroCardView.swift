@@ -6,10 +6,10 @@ struct HeroCardView: View {
     @EnvironmentObject private var state: AppState
 
     private var status: String {
-        if state.isComparingOriginal { return "Comparing · bare screen" }
-        if state.previewPaper != nil { return "Paper Mill draft on screen" }
-        if state.isSnoozed { return "Snoozed" }
-        return state.isEnabled ? "Enabled · follows your app rules" : "Paused"
+        if state.isComparingOriginal { return L("Comparing · bare screen") }
+        if state.previewPaper != nil { return L("Paper Mill draft on screen") }
+        if state.isSnoozed { return L("Snoozed") }
+        return state.isEnabled ? L("Enabled · follows your app rules") : L("Paused")
     }
 
     var body: some View {
@@ -17,14 +17,14 @@ struct HeroCardView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("MAKE YOURSELF\nCOMFORTABLE.")
+                        Text(L("MAKE YOURSELF\nCOMFORTABLE."))
                             .font(.system(size: 9, weight: .semibold, design: .monospaced))
                             .tracking(1.3)
-                        Text("A softer\nside of screen.")
+                        Text(L("A softer\nside of screen."))
                             .font(.system(size: 25, weight: .bold, design: .rounded))
                             .tracking(-1)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("A little company for your cursor.")
+                        Text(L("A little company for your cursor."))
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -41,16 +41,16 @@ struct HeroCardView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.12)))
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(state.texture.name)
+                        Text(state.texture.displayName)
                             .font(.system(size: 14, weight: .semibold))
                             .lineLimit(1)
-                        Text(state.texture.subtitle)
+                        Text(state.texture.displaySubtitle)
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
-                    Text(state.texture.isQuietReading ? "22%\nSAMPLE" : "PAPER\nSAMPLE")
+                    Text(state.texture.isQuietReading ? L("22%\nSAMPLE") : L("PAPER\nSAMPLE"))
                         .font(.system(size: 8, weight: .medium, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.trailing)
@@ -69,18 +69,18 @@ struct HeroCardView: View {
                 Spacer(minLength: 0)
             }
             HStack {
-                Text("Paper intensity").font(.system(size: 12, weight: .medium))
+                Text(L("Paper intensity")).font(.system(size: 12, weight: .medium))
                 Spacer()
                 Text("\(Int(state.intensity * 100))%")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
             Slider(value: $state.intensity, in: 0.05...0.45)
-                .accessibilityLabel("Paper intensity")
-                .accessibilityValue("\(Int(state.intensity * 100)) percent")
+                .accessibilityLabel(L("Paper intensity"))
+                .accessibilityValue(LF("%@ percent", String(Int(state.intensity * 100))))
 
             HStack {
-                Text("Matte finish").font(.system(size: 12, weight: .medium))
+                Text(L("Matte finish")).font(.system(size: 12, weight: .medium))
                 Spacer()
                 Text("\(Int((state.matteStrength * 100).rounded()))%")
                     .font(.system(size: 11, design: .monospaced))
@@ -88,8 +88,8 @@ struct HeroCardView: View {
             }
             Slider(value: $state.matteStrength, in: 0...1)
                 .tint(StudioStyle.rust)
-                .accessibilityLabel("Matte finish")
-                .accessibilityValue("\(Int((state.matteStrength * 100).rounded())) percent")
+                .accessibilityLabel(L("Matte finish"))
+                .accessibilityValue(LF("%@ percent", String(Int((state.matteStrength * 100).rounded()))))
 
             HStack(spacing: 8) {
                 Button {
@@ -97,7 +97,7 @@ struct HeroCardView: View {
                     if state.shouldShowOverlay { state.isEnabled = false }
                     else { state.cancelSnooze(); state.isEnabled = true }
                 } label: {
-                    Label(state.shouldShowOverlay ? "Pause paper" : "Enable paper",
+                    Label(state.shouldShowOverlay ? L("Pause paper") : L("Enable paper"),
                           systemImage: state.shouldShowOverlay ? "pause" : "play")
                         .frame(maxWidth: .infinity)
                 }
@@ -106,13 +106,13 @@ struct HeroCardView: View {
                 Button {
                     state.isComparingOriginal.toggle()
                 } label: {
-                    Label(state.isComparingOriginal ? "Back to paper" : "Compare original",
+                    Label(state.isComparingOriginal ? L("Back to paper") : L("Compare original"),
                           systemImage: "rectangle.on.rectangle")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(StudioActionStyle(prominent: false))
                 .disabled(!state.shouldShowOverlay && state.previewPaper == nil && !state.isComparingOriginal)
-                .help("Temporarily hide the paper. Closing the menu restores it.")
+                .help(L("Temporarily hide the paper. Closing the menu restores it."))
             }
             .controlSize(.small)
             .font(.system(size: 11))

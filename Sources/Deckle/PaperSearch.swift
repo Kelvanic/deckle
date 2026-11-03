@@ -12,7 +12,7 @@ enum PaperSearch {
                     preset.weave != nil ? "weave woven cotton" : "smooth",
                     isCustom ? "custom my paper" : "built in",
                     preset.isQuietReading ? "quiet reading low pattern" : ""]
-        let searchable = normalized(([preset.name, preset.subtitle, preset.id] + tags).joined(separator: " "))
+        let searchable = normalized(([preset.name, preset.subtitle, preset.id, L(preset.name, language: .simplifiedChinese), L(preset.subtitle, language: .simplifiedChinese)] + tags).joined(separator: " "))
         return normalized(query).split(separator: " ").allSatisfy { searchable.contains($0) }
     }
 }

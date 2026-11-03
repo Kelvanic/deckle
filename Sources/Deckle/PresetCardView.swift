@@ -45,12 +45,12 @@ struct ModernPresetCard: View {
 
                 // Text labels
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(preset.name)
+                    Text(preset.displayName)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.85))
                         .lineLimit(1)
 
-                    Text(tagText)
+                    Text(L(tagText))
                         .font(.system(size: 10, weight: .regular))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -75,22 +75,22 @@ struct ModernPresetCard: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .contextMenu {
             if let customPaper {
-                Button("Edit in Paper Mill…") {
+                Button(L("Edit in Paper Mill…")) {
                     if let onOpenMill {
                         onOpenMill(customPaper, false)
                     } else {
                         PaperMill.shared.open(editing: customPaper)
                     }
                 }
-                Button("Export Paper…") {
+                Button(L("Export Paper…")) {
                     PaperFiles.export(customPaper)
                 }
                 Divider()
-                Button("Delete", role: .destructive) {
+                Button(L("Delete"), role: .destructive) {
                     state.customPapers.removeAll { $0.id == customPaper.id }
                 }
             } else {
-                Button("Duplicate in Paper Mill…") {
+                Button(L("Duplicate in Paper Mill…")) {
                     let duplicate = CustomPaper(duplicating: preset)
                     if let onOpenMill {
                         onOpenMill(duplicate, true)
@@ -100,20 +100,20 @@ struct ModernPresetCard: View {
                 }
             }
         }
-        .help(preset.subtitle)
+        .help(preset.displaySubtitle)
     }
 
     private var tagText: String {
         if isCustom {
-            return "Custom"
+            return L("Custom")
         } else if preset.isQuietReading {
-            return preset.id == "clear-veil" ? "No grain" : "Quiet reading"
+            return preset.id == "clear-veil" ? L("No grain") : L("Quiet reading")
         } else if preset.isDark {
-            return "Dark paper"
+            return L("Dark paper")
         } else if preset.weave != nil {
-            return "Woven"
+            return L("Woven")
         } else {
-            return preset.subtitle.components(separatedBy: ",").first ?? "Smooth"
+            return preset.subtitle.components(separatedBy: ",").first ?? L("Smooth")
         }
     }
 }
@@ -169,14 +169,14 @@ struct PresetCollectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if isShowingAllGrid && !isSearching {
-                StudioBanner(eyebrow: "The paper library", title: "Find your kind of quiet.",
-                             detail: "Light, dark, textured, or entirely your own.", symbol: "square.stack.3d.up", color: StudioStyle.sage)
+                StudioBanner(eyebrow: L("The paper library"), title: L("Find your kind of quiet."),
+                             detail: L("Light, dark, textured, or entirely your own."), symbol: "square.stack.3d.up", color: StudioStyle.sage)
             }
             // Header row; the menu's Your desk tab leaves the library.
             HStack {
                 HStack(spacing: 6) {
                     if isSearching {
-                        Text("Search Results")
+                        Text(L("Search Results"))
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         Text("\(filteredPresets.count)")
@@ -187,7 +187,7 @@ struct PresetCollectionView: View {
                             .background(StudioStyle.rust.opacity(0.12))
                             .clipShape(Capsule())
                     } else {
-                        Text("Paper library")
+                        Text(L("Paper library"))
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                     }
@@ -196,7 +196,7 @@ struct PresetCollectionView: View {
                 Spacer()
 
                 if isSearching {
-                    Button("Clear") {
+                    Button(L("Clear")) {
                         searchText = ""
                     }
                     .font(.system(size: 12, weight: .medium))
@@ -205,25 +205,25 @@ struct PresetCollectionView: View {
                 }
 
                 Menu {
-                    Button("New Paper…") {
+                    Button(L("New Paper…")) {
                         if let onOpenMill {
                             onOpenMill(CustomPaper(), true)
                         } else {
                             PaperMill.shared.open()
                         }
                     }
-                    Button("Import Papers…") { PaperFiles.importPapers() }
+                    Button(L("Import Papers…")) { PaperFiles.importPapers() }
                 } label: {
                     // Menu takes its accessibility name from its label
                     // content; a modifier on the Menu itself is ignored.
                     Image(systemName: "ellipsis.circle")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .accessibilityLabel("Paper actions")
+                        .accessibilityLabel(L("Paper actions"))
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .help("Paper actions")
+                .help(L("Paper actions"))
             }
 
             // Category Filter Pills (when in All Grid or searching)
@@ -235,7 +235,7 @@ struct PresetCollectionView: View {
                                 selectedCategory = category
                             }
                         }) {
-                            Text(category.rawValue)
+                            Text(L(category.rawValue))
                                 .font(.system(size: 11, weight: selectedCategory == category ? .semibold : .regular))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
@@ -265,8 +265,8 @@ struct PresetCollectionView: View {
                             .background(Circle().fill(Color.primary.opacity(0.06)))
                     }
                     .buttonStyle(.plain)
-                    .help("Create new custom paper")
-                    .accessibilityLabel("New paper")
+                    .help(L("Create new custom paper"))
+                    .accessibilityLabel(L("New paper"))
                 }
             }
 
@@ -275,16 +275,16 @@ struct PresetCollectionView: View {
                     Image(systemName: "doc.text.magnifyingglass")
                         .font(.system(size: 24))
                         .foregroundStyle(.tertiary)
-                    Text(isSearching ? "No papers matching \"\(normalizedQuery)\"" : "No papers found")
+                    Text(isSearching ? LF("No papers matching “%@”", normalizedQuery) : L("No papers found"))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                     if isSearching {
-                        Button("Clear Search") {
+                        Button(L("Clear Search")) {
                             searchText = ""
                         }
                         .controlSize(.small)
                     } else if selectedCategory == .custom {
-                        Button("Create custom paper") {
+                        Button(L("Create custom paper")) {
                             if let onOpenMill {
                                 onOpenMill(CustomPaper(), true)
                             } else {

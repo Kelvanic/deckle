@@ -9,9 +9,9 @@ struct DeskSetupsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Desk setups").font(.system(size: 15, weight: .bold, design: .rounded))
+                Text(L("Desk setups")).font(.system(size: 15, weight: .bold, design: .rounded))
                 Spacer()
-                Button(isNaming ? "Cancel" : "Save current…") {
+                Button(isNaming ? L("Cancel") : L("Save current…")) {
                     isNaming.toggle()
                     name = ""
                     nameFocused = isNaming
@@ -23,16 +23,16 @@ struct DeskSetupsView: View {
             }
             if isNaming {
                 HStack {
-                    TextField("Name this setup", text: $name)
+                    TextField(L("Name this setup"), text: $name)
                         .textFieldStyle(.roundedBorder)
                         .focused($nameFocused)
                         .onSubmit(save)
-                    Button("Save", action: save)
+                    Button(L("Save"), action: save)
                         .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             if state.deskSetups.isEmpty {
-                Text("Save a paper, intensity, grain and matte combination for your next session.")
+                Text(L("Save a paper, intensity, grain and matte combination for your next session."))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -51,7 +51,7 @@ struct DeskSetupsView: View {
                                 }
                                 .foregroundStyle(selected ? StudioStyle.rust : .secondary)
                                 Text(setup.name).font(.system(size: 12, weight: .medium)).lineLimit(1)
-                                Text(available ? "Paper + finish" : "Paper missing")
+                                Text(available ? L("Paper + finish") : L("Paper missing"))
                                     .font(.system(size: 9)).foregroundStyle(.secondary)
                             }
                             .padding(11)
@@ -64,9 +64,9 @@ struct DeskSetupsView: View {
                         .buttonStyle(StudioButtonStyle())
                         .accessibilityAddTraits(selected ? .isSelected : [])
                         .disabled(!available || state.previewPaper != nil)
-                        .help(available ? "Apply \(setup.name): paper, intensity, grain and matte" : "The paper used by this setup was deleted")
+                        .help(available ? LF("Apply %@: paper, intensity, grain and matte", setup.name) : L("The paper used by this setup was deleted"))
                         .contextMenu {
-                            Button("Remove setup", role: .destructive) {
+                            Button(L("Remove setup"), role: .destructive) {
                                 state.deskSetups.removeAll { $0.id == setup.id }
                             }
                         }
@@ -74,11 +74,11 @@ struct DeskSetupsView: View {
                 }
             }
             if state.previewPaper != nil {
-                Text("Finish your Paper Mill preview to use desk setups.")
+                Text(L("Finish your Paper Mill preview to use desk setups."))
                     .font(.system(size: 10)).foregroundStyle(.secondary)
             }
             if state.deskSetups.count >= 8 {
-                Text("8 setups saved. Right-click a setup to remove it.")
+                Text(L("8 setups saved. Right-click a setup to remove it."))
                     .font(.system(size: 10)).foregroundStyle(.secondary)
             }
         }

@@ -9,6 +9,7 @@ struct DeckleApp: App {
         MenuBarExtra {
             MenuView()
                 .environmentObject(state)
+                .environment(\.locale, Locale(identifier: state.language.rawValue))
         } label: {
             MenuBarLabel()
         }
