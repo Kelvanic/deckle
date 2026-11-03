@@ -60,32 +60,14 @@ final class CompositorOverlay {
         if windowID != 0 { _ = api.release(connection, windowID) }
     }
 
-    private var previewRegions: [CGRect] = []
-
-    func setPreviewRegions(_ regions: [CGRect]) {
-        guard regions != previewRegions else { return }
-        let dirty = previewRegions + regions
-        previewRegions = regions
-        if let tile = drawnTile { paint(tile: tile, dirty: dirty) }
-    }
-
     func draw(tile: NSImage) {
-        guard tile !== drawnTile else { return }
-        paint(tile: tile, dirty: nil)
-        drawnTile = tile
-    }
-
-    private func paint(tile: NSImage, dirty: [CGRect]?) {
-        guard let context,
+        guard tile !== drawnTile, let context,
               let image = tile.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
-        context.saveGState()
-        if let dirty { context.clip(to: dirty) }
         context.clear(bounds)
         context.draw(image, in: CGRect(origin: .zero, size: tile.size), byTiling: true)
-        for rect in previewRegions { context.clear(rect) }
-        context.restoreGState()
         context.flush()
         _ = api.flush(connection, windowID, nil)
+        drawnTile = tile
     }
 
     func setAlpha(_ alpha: CGFloat) {

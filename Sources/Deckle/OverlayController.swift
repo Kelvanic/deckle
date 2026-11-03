@@ -11,41 +11,6 @@ final class OverlayController {
     private var cancellables: Set<AnyCancellable> = []
     private var frontmostBundleID: String?
 
-    private var previewTimer: Timer?
-    private var cleanShotPID: pid_t?
-
-    private func trackCleanShot(_ needed: Bool) {
-        let pid = needed ? NSRunningApplication.runningApplications(
-            withBundleIdentifier: CleanShotPreview.bundleID).first?.processIdentifier : nil
-        if cleanShotPID != pid {
-            previewTimer?.invalidate()
-            previewTimer = nil
-            cleanShotPID = pid
-            if pid != nil {
-                // Pins are nonactivating windows. Focus notifications alone miss
-                // moving, closing, or covering one while another app is active.
-                let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-                    MainActor.assumeIsolated { self?.updatePreviewRegions() }
-                }
-                timer.tolerance = 0.05
-                previewTimer = timer
-                RunLoop.main.add(timer, forMode: .common)
-            } else {
-                for window in windows.values { window.setPreviewRegions([]) }
-            }
-        }
-    }
-
-    private func updatePreviewRegions() {
-        guard let owner = cleanShotPID,
-              let rows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], 0)
-                as? [[String: Any]] else { return }
-        for (displayID, window) in windows where window.isVisible {
-            window.setPreviewRegions(CleanShotPreview.regions(in: rows, below: window.presentedWindowID,
-                on: CGDisplayBounds(displayID), owner: owner))
-        }
-    }
-
     private init() {}
 
     private var refreshScheduled = false
@@ -96,20 +61,12 @@ final class OverlayController {
             }
         }
 
-        for event in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
-            NSWorkspace.shared.notificationCenter.addObserver(forName: event, object: nil, queue: .main) { [weak self] note in
-                guard (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier
-                        == CleanShotPreview.bundleID else { return }
-                Task { @MainActor in self?.refresh() }
-            }
-        }
         refresh()
     }
 
     func refresh() {
         let state = AppState.shared
         var seen: Set<CGDirectDisplayID> = []
-        var trackingNeeded = false
 
         for screen in NSScreen.screens {
             guard let displayID = screen.displayID else { continue }
@@ -142,7 +99,6 @@ final class OverlayController {
             }()
 
             if visible {
-                trackingNeeded = trackingNeeded || !state.hideFromCapture
                 // Only visible overlays render: browsing papers or dragging
                 // grain controls while paused costs no tile synthesis. The
                 // texture is applied before a hidden window is shown.
@@ -172,7 +128,6 @@ final class OverlayController {
             window.close()
             windows.removeValue(forKey: displayID)
         }
-        trackCleanShot(trackingNeeded)
     }
 }
 
