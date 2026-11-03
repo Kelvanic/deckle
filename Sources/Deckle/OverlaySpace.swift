@@ -11,7 +11,7 @@ final class OverlaySpace {
     private typealias Create = @convention(c) (Int32, Int32, Int32) -> Int32
     private typealias SetLevel = @convention(c) (Int32, Int32, Int32) -> Int32
     private typealias Show = @convention(c) (Int32, CFArray) -> Void
-    private typealias Attach = @convention(c) (Int32, Int32, CFArray, Int32) -> Int32
+    private typealias Attach = @convention(c) (Int32, Int32, CFArray, Int32) -> Void
 
     private let connection: Int32
     private let space: Int32
@@ -36,8 +36,13 @@ final class OverlaySpace {
     }
 
     func attach(_ window: NSWindow) {
+        attach(windowID: CGWindowID(window.windowNumber))
+    }
+
+    func attach(windowID: CGWindowID) {
         // Mask 7 removes prior memberships atomically (as in SketchyBar).
-        let result = addWindow(connection, space, [NSNumber(value: window.windowNumber)] as CFArray, 7)
-        if result != 0 { NSLog("Deckle: could not attach overlay to display space (%d)", result) }
+        // This SPI has no usable result on current macOS (successful moves
+        // return a stale register value). Membership was verified separately.
+        addWindow(connection, space, [NSNumber(value: windowID)] as CFArray, 7)
     }
 }
