@@ -162,6 +162,7 @@ struct StudioSegmentedPicker<Value: Hashable>: View {
                     Text(L(option.label))
                         .font(.system(size: 11, weight: selected ? .semibold : .medium))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
                         // Window color keeps contrast on the lighter dark-mode rust.

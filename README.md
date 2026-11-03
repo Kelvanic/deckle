@@ -131,7 +131,9 @@ Or `make run` to build and launch it from `dist/` without installing. Local buil
 
 ## Language
 
-Open Controls and settings → Settings → Language to choose English or 简体中文. The change applies immediately and is remembered after relaunch. Built-in paper names and descriptions are translated for display, while saved paper IDs and custom paper names stay stable.
+Open Controls and settings → Settings → Language to choose English, 简体中文, 繁體中文, 日本語, 한국어, Français, Deutsch, Español, Português (Brasil), Italiano, or Русский. The change applies immediately and is remembered after relaunch. Built-in paper names and descriptions are translated for display, while saved paper IDs and custom paper names stay stable.
+
+The nine additional language catalogs start with machine translations and welcome native-speaker review.
 
 ## How it works
 

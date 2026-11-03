@@ -3,13 +3,36 @@ import Foundation
 enum AppLanguage: String, CaseIterable, Identifiable {
     case english = "en"
     case simplifiedChinese = "zh-Hans"
+    case traditionalChinese = "zh-Hant"
+    case japanese = "ja"
+    case korean = "ko"
+    case french = "fr"
+    case german = "de"
+    case spanish = "es"
+    case brazilianPortuguese = "pt-BR"
+    case italian = "it"
+    case russian = "ru"
 
     static let preferenceKey = "appLanguage"
     static var current: AppLanguage {
         AppLanguage(rawValue: UserDefaults.standard.string(forKey: preferenceKey) ?? "") ?? .english
     }
     var id: String { rawValue }
-    var label: String { self == .english ? "English" : "简体中文" }
+    var label: String {
+        switch self {
+        case .english: return "English"
+        case .simplifiedChinese: return "简体中文"
+        case .traditionalChinese: return "繁體中文"
+        case .japanese: return "日本語"
+        case .korean: return "한국어"
+        case .french: return "Français"
+        case .german: return "Deutsch"
+        case .spanish: return "Español"
+        case .brazilianPortuguese: return "Português (Brasil)"
+        case .italian: return "Italiano"
+        case .russian: return "Русский"
+        }
+    }
 
     private static let resources: Bundle = {
         if let url = Bundle.main.url(forResource: "Deckle_Deckle", withExtension: "bundle"),
@@ -18,9 +41,13 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     }()
 
     var bundle: Bundle {
-        guard let path = Self.resources.path(forResource: rawValue, ofType: "lproj"),
-              let bundle = Bundle(path: path) else { return Self.resources }
-        return bundle
+        // SwiftPM normalizes locale directory names to lowercase, while
+        // Xcode's universal build can preserve the source spelling.
+        for name in [rawValue, rawValue.lowercased()] {
+            if let url = Self.resources.resourceURL?.appendingPathComponent(name + ".lproj"),
+               let bundle = Bundle(url: url) { return bundle }
+        }
+        return Self.resources
     }
 }
 

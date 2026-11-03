@@ -3,16 +3,27 @@ import SwiftUI
 @testable import Deckle
 
 final class LocalizationTests: XCTestCase {
-    func testChineseCatalogAndFallback() throws {
+    func testEveryLanguageCatalogAndFallback() throws {
         let englishPath = try XCTUnwrap(AppLanguage.english.bundle.path(forResource: "Localizable", ofType: "strings"))
-        let chinesePath = try XCTUnwrap(AppLanguage.simplifiedChinese.bundle.path(forResource: "Localizable", ofType: "strings"))
         let english = try XCTUnwrap(NSDictionary(contentsOfFile: englishPath) as? [String: String])
-        let chinese = try XCTUnwrap(NSDictionary(contentsOfFile: chinesePath) as? [String: String])
-        XCTAssertEqual(Set(english.keys), Set(chinese.keys))
-        for key in english.keys {
-            XCTAssertFalse(try XCTUnwrap(chinese[key]).isEmpty, key)
-            XCTAssertEqual(key.components(separatedBy: "%@").count,
-                           chinese[key]?.components(separatedBy: "%@").count, key)
+        for language in AppLanguage.allCases {
+            XCTAssertEqual(language.bundle.bundleURL.lastPathComponent.lowercased(),
+                           language.rawValue.lowercased() + ".lproj")
+            let path = try XCTUnwrap(language.bundle.path(forResource: "Localizable", ofType: "strings"))
+            let catalog = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
+            XCTAssertEqual(Set(english.keys), Set(catalog.keys), language.rawValue)
+            for key in english.keys {
+                let value = try XCTUnwrap(catalog[key])
+                XCTAssertFalse(value.isEmpty, "\(language.rawValue): \(key)")
+                XCTAssertEqual(key.components(separatedBy: "%@").count,
+                               value.components(separatedBy: "%@").count, "\(language.rawValue): \(key)")
+            }
+        }
+        let settings = ["en": "Settings", "zh-Hans": "设置", "zh-Hant": "設定",
+                        "ja": "設定", "ko": "설정", "fr": "Réglages", "de": "Einstellungen",
+                        "es": "Ajustes", "pt-BR": "Configurações", "it": "Impostazioni", "ru": "Настройки"]
+        for language in AppLanguage.allCases {
+            XCTAssertEqual(L("Settings", language: language), settings[language.rawValue])
         }
         let clearVeil = TexturePreset.preset(id: "clear-veil")
         XCTAssertTrue(PaperSearch.matches(clearVeil, query: "清透", isCustom: false))
@@ -29,8 +40,10 @@ final class LocalizationTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
         let state = AppState(defaults: defaults)
         XCTAssertEqual(state.language, .english)
-        state.language = .simplifiedChinese
-        XCTAssertEqual(AppState(defaults: defaults).language, .simplifiedChinese)
+        for language in AppLanguage.allCases {
+            state.language = language
+            XCTAssertEqual(AppState(defaults: defaults).language, language)
+        }
         defaults.set("unknown-language", forKey: AppLanguage.preferenceKey)
         XCTAssertEqual(AppState(defaults: defaults).language, .english)
     }
@@ -50,7 +63,11 @@ final class LocalizationTests: XCTestCase {
         for language in AppLanguage.allCases {
             defaults.set(language.rawValue, forKey: AppLanguage.preferenceKey)
             state.language = language
-            XCTAssertEqual(L("Settings"), language == .english ? "Settings" : "设置")
+            XCTAssertEqual(L("Settings"), L("Settings", language: language))
+            XCTAssertEqual(AppLanguage.current, language)
+            let paper = TexturePreset.preset(id: "clear-veil")
+            XCTAssertTrue(PaperSearch.matches(paper, query: paper.displayName, isCustom: false))
+            XCTAssertEqual(TexturePreset(custom: CustomPaper(name: "Clear Veil")).displayName, "Clear Veil")
             for tab in QuickControlsView.ControlTab.allCases {
                 let view = QuickControlsView(isExpanded: .constant(true), selectedTab: .constant(tab))
                     .environmentObject(state)

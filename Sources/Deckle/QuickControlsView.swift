@@ -77,7 +77,8 @@ struct QuickControlsView: View {
                     Button { selectedTab = tab } label: {
                         VStack(spacing: 5) {
                             Image(systemName: tab.icon).font(.system(size: 14, weight: .medium))
-                            Text(L(tab.rawValue)).font(.system(size: 9, weight: .medium)).lineLimit(1)
+                            Text(L(tab.rawValue)).font(.system(size: 9, weight: .medium))
+                                .lineLimit(1).minimumScaleFactor(0.7)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
