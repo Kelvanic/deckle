@@ -31,6 +31,9 @@ final class CompositorOverlay {
 
         // Nonactivating, click-through, no shadow, excluded from window cycling.
         var tags: UInt64 = (1 << 1) | (1 << 16) | (1 << 9) | (1 << 3) | (1 << 18)
+        // AppKit pairs sharingType .none with WindowServer tag 37. Setting
+        // only the sharing state leaves this direct window in CleanShot captures.
+        if sharing == .none { tags |= UInt64(1) << 37 }
         var clear: UInt64 = 1 << 10 // mutually exclusive opaque-for-events tag
         var id: CGWindowID = 0
         guard api.create(connection, 2, region, empty, 13 | (1 << 18), &tags,
