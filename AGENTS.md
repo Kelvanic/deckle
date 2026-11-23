@@ -25,9 +25,9 @@ make build UNIVERSAL=1              # arm64 + x86_64 release compile
 make dmg                            # Local DMG
 ```
 
-Before shipping a code change, run `swift test`. For release-sensitive changes, also run `make build UNIVERSAL=1`: the release workflow uses Xcode 15.4 and builds both architectures, which can expose actor-isolation errors that a local single-architecture build misses.
+Before shipping a code change, run `swift test`. For release-sensitive changes, also run `make build UNIVERSAL=1`: a universal release build can expose actor-isolation errors that a local single-architecture build misses.
 
-`.github/workflows/ci.yml` runs the same checks on Xcode 15.4 for every PR and push to `main`; a newer local toolchain can accept code it rejects. A common case: inside a `[weak self]` callback, give the hop its own capture — `Task { @MainActor [weak self] in self?.work() }` — because Xcode 15 rejects `self?` from the outer closure as a captured `var`.
+CI and releases use `macos-15` with Xcode 16.4. `.github/workflows/ci.yml` runs the checks on every PR and push to `main`. Keep source compatible with Swift 5.9: inside a `[weak self]` callback, give the hop its own capture — `Task { @MainActor [weak self] in self?.work() }` — because Xcode 15 rejects `self?` from the outer closure as a captured `var`.
 
 ## Source map
 
@@ -71,7 +71,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - Every pet layer is canvas-sized with an explicit pivot, so all paths share one canvas space and anchor rotations work.
 - `PetRig` never writes the host-owned `root` transform; hosts size it with `place(in:)`. Overlays (sleep z's, bubbles) live unflipped in root space.
 - No pose may draw outside the 160 × 120 canvas; `PetArtworkTests` sweeps every mood to enforce it.
-- Keep posture arithmetic in short typed terms (`weigh`). The Xcode 15 release compiler can time out on long literal `CGFloat` expressions.
+- Keep posture arithmetic in short typed terms (`weigh`). Xcode 15 can time out on long literal `CGFloat` expressions.
 
 ### Renderer compatibility and performance
 
@@ -108,7 +108,7 @@ Before shipping a code change, run `swift test`. For release-sensitive changes, 
 - A horizontally scrolling row needs an explicit overflow affordance, and every item in it must be reachable by clicking. The five control tabs fit at 370 points without scrolling; do not add a fade or paging arrow unless they overflow.
 - Preserve stable entry points for New and Import. A dismissible promo card is not sufficient navigation.
 - `MenuDismiss` may dismiss MenuBarExtra/popover content only. It must not order out `NSColorPanel`, `NSStatusBarWindow`, or arbitrary nonactivating panels, and it must never send a generic `performClose:` down the responder chain.
-- AppKit and observable UI singletons are `@MainActor`. Stored callback closures are not automatically actor-isolated under the Xcode 15 release compiler; hop explicitly with `Task { @MainActor in ... }` before calling them.
+- AppKit and observable UI singletons are `@MainActor`. Stored callback closures are not automatically actor-isolated; hop explicitly with `Task { @MainActor in ... }` before calling them.
 
 ## Testing expectations
 

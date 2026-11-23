@@ -9,9 +9,9 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       # Signing + notarization activate only when the repo has these secrets;
       # otherwise the build falls back to an ad-hoc signature (still installs,
       # but shows Gatekeeper's "unverified developer" prompt).
