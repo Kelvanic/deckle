@@ -16,7 +16,7 @@ No third-party dependencies — Swift and Apple frameworks, built with SwiftPM. 
 
 ## Making changes
 
-- `main` is protected: branch → PR. There is no CI on pull requests, so run `swift test` locally and include the result. For release-sensitive changes, also run `make build UNIVERSAL=1`, which compiles both architectures as the release workflow does.
+- `main` is protected: branch → PR. Run `swift test` locally and include the result. PR CI runs the tests and `make build UNIVERSAL=1` on the release toolchain. For release-sensitive changes, run the universal build locally as well.
 - Look at [`good first issue`](https://github.com/Kelvanic/deckle/labels/good%20first%20issue) for curated starting points, or open a [Discussion](https://github.com/Kelvanic/deckle/discussions) before larger work so we agree on direction first.
 - Code style: match what's around you. Comments explain *constraints*, not what the next line does.
 - One feature or fix per PR. Include screenshots for UI changes.
