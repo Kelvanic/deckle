@@ -84,8 +84,10 @@ final class OverlayController {
             // it is only ever set before a window first orders front — when
             // the setting changes, the window is rebuilt.
             let sharing: NSWindow.SharingType = state.hideFromCapture ? .none : .readOnly
-            if let existing = windows[displayID], existing.sharingType != sharing {
-                existing.orderOut(nil)
+            if let existing = windows[displayID],
+               existing.sharingType != sharing || existing.frame != screen.frame
+                || existing.renderScale != screen.backingScaleFactor {
+                existing.close()
                 windows.removeValue(forKey: displayID)
             }
 
@@ -96,10 +98,6 @@ final class OverlayController {
                 return created
             }()
 
-            if window.frame != screen.frame {
-                window.setFrame(screen.frame, display: true)
-            }
-
             if visible {
                 // Only visible overlays render: browsing papers or dragging
                 // grain controls while paused costs no tile synthesis. The
@@ -108,23 +106,17 @@ final class OverlayController {
                 if window.isVisible {
                     // Already showing (e.g. slider drag): track directly,
                     // animating every tick would lag behind the slider.
-                    window.alphaValue = CGFloat(state.intensity)
+                    window.setIntensity(CGFloat(state.intensity))
                 } else {
                     window.alphaValue = 0
                     window.orderFrontRegardless()
-                    NSAnimationContext.runAnimationGroup { context in
-                        context.duration = 0.4
-                        window.animator().alphaValue = CGFloat(state.intensity)
-                    }
+                    window.fade(to: CGFloat(state.intensity))
                 }
             } else if window.isVisible {
-                NSAnimationContext.runAnimationGroup({ context in
-                    context.duration = 0.4
-                    window.animator().alphaValue = 0
-                }, completionHandler: {
+                window.fade(to: 0, completion: { [weak window] in
                     // Only detach if nothing re-showed it mid-fade (a re-show
                     // would have restored a non-zero alpha).
-                    if window.alphaValue == 0 {
+                    if let window, window.alphaValue == 0 {
                         window.orderOut(nil)
                     }
                 })
@@ -133,7 +125,7 @@ final class OverlayController {
 
         // Drop windows for displays that went away.
         for (displayID, window) in windows where !seen.contains(displayID) {
-            window.orderOut(nil)
+            window.close()
             windows.removeValue(forKey: displayID)
         }
     }
