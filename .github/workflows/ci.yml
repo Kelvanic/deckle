@@ -1,7 +1,6 @@
 name: CI
 
-# Runs the release workflow's verification on the release toolchain, so code
-# the Xcode 15 compiler rejects is caught in review instead of at tag time.
+# Keep the runner and Xcode version in sync with release.yml.
 on:
   pull_request:
   push:
@@ -17,9 +16,9 @@ concurrency:
 
 jobs:
   test:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - uses: actions/checkout@v5
 
