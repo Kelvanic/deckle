@@ -7,6 +7,10 @@ import Combine
 final class AppState: ObservableObject {
     static let shared = AppState()
 
+    @Published var language: AppLanguage {
+        didSet { defaults.set(language.rawValue, forKey: AppLanguage.preferenceKey) }
+    }
+
     @Published var isEnabled: Bool {
         didSet { defaults.set(isEnabled, forKey: Keys.enabled) }
     }
@@ -254,6 +258,7 @@ final class AppState: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        language = AppLanguage(rawValue: defaults.string(forKey: AppLanguage.preferenceKey) ?? "") ?? .english
         isEnabled = defaults.object(forKey: Keys.enabled) as? Bool ?? true
         intensity = defaults.object(forKey: Keys.intensity) as? Double ?? 0.22
         textureID = defaults.string(forKey: Keys.texture) ?? TexturePreset.all[0].id

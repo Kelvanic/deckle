@@ -57,6 +57,9 @@ struct TextureEngineConfig: Equatable {
 }
 
 struct TexturePreset: Identifiable, Equatable {
+    var displayName: String { Self.all.contains { $0.id == id } ? L(name) : name }
+    var displaySubtitle: String { Self.all.contains { $0.id == id } ? L(subtitle) : L("Custom paper") }
+
     let id: String
     let name: String
     let subtitle: String
